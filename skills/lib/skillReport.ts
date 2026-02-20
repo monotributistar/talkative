@@ -18,6 +18,7 @@
  */
 
 import fs from "node:fs";
+import path from "node:path";
 
 export interface SkillReportEnvelope<T = unknown> {
   /** Whether the skill considers its own execution successful. */
@@ -57,7 +58,7 @@ export function writeSkillReport<T>(
     ...(opts?.error ? { error: opts.error } : {})
   };
 
-  fs.mkdirSync(require("node:path").dirname(outputPath), { recursive: true });
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, JSON.stringify(report, null, 2), "utf8");
   console.log(`[${skillName}] Wrote report to: ${outputPath}`);
 }
