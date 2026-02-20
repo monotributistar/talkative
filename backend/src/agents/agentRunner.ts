@@ -7,7 +7,7 @@ import { buildDeterministicContext } from "../prompt/contextBuilder.js";
 import { createPromptVersion, getActivePrompt } from "../prompt/store.js";
 import { interpretConversation } from "../services/interpreter.js";
 import { logRouterUsage } from "../router/service.js";
-import { appendAgentEvent, readAgentEvents } from "./eventStore.js";
+import { appendAgentEvent, autoPruneIfNeeded, readAgentEvents } from "./eventStore.js";
 import { loadAgentSkills } from "./skillLoader.js";
 import { runWorkspaceTool } from "./toolRunner.js";
 import { AgentEvent, AgentMessageResponse, AgentRecord, AgentSkill } from "./types.js";
@@ -206,6 +206,8 @@ export class AgentRunner {
       }
     }
 
+    // Keep event files bounded in active agents.
+    await this.pruneEventsIfNeeded();
     return emitted;
   }
 
@@ -346,7 +348,16 @@ export class AgentRunner {
       status: "ok"
     });
 
+    await this.pruneEventsIfNeeded();
     return response;
+  }
+
+  private async pruneEventsIfNeeded(): Promise<void> {
+    try {
+      await autoPruneIfNeeded(this.agent.id);
+    } catch {
+      // Pruning is best-effort. Never fail user-facing flows for maintenance.
+    }
   }
 
   async runCommand(command: string): Promise<void> {
