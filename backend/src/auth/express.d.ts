@@ -6,6 +6,7 @@ declare global {
     interface Request {
       auth?: AuthPrincipal;
       context?: Required<LogContext> & { request_id: string };
+      community_tenant_id?: string;
     }
   }
 }

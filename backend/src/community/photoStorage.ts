@@ -76,10 +76,16 @@ export function getPhotosForReport(report_id: string): PhotoRecord[] {
   ).all(report_id) as PhotoRecord[];
 }
 
-export async function getPhotoBuffer(photo_id: string): Promise<{ buffer: Buffer; mimetype: string; filename: string } | null> {
+export async function getPhotoBuffer(
+  photo_id: string,
+  tenant_id: string
+): Promise<{ buffer: Buffer; mimetype: string; filename: string } | null> {
   const record = getDb().prepare(
-    "SELECT * FROM photos WHERE id = ?"
-  ).get(photo_id) as PhotoRecord | undefined;
+    `SELECT p.*
+       FROM photos p
+       JOIN reports r ON r.id = p.report_id
+      WHERE p.id = ? AND r.tenant_id = ?`
+  ).get(photo_id, tenant_id) as PhotoRecord | undefined;
 
   if (!record) return null;
 

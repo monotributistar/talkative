@@ -76,7 +76,10 @@ communityRouter.post("/community/reports", requireCommunityCode, async (req, res
       return res.status(400).json({ error: "text is required" });
     }
 
-    const tenant_id = (req.headers["x-tenant-id"] as string) || "tenant-default";
+    const tenant_id = req.community_tenant_id;
+    if (!tenant_id) {
+      return res.status(400).json({ error: "Tenant context missing for community request" });
+    }
 
     const report = ingestReport(tenant_id, {
       resident_id: resident_id || `anon-${Date.now()}`,
@@ -95,9 +98,12 @@ communityRouter.post("/community/reports", requireCommunityCode, async (req, res
   }
 });
 
-communityRouter.get("/community/reports/:id/status", async (req, res) => {
+communityRouter.get("/community/reports/:id/status", requireCommunityCode, async (req, res) => {
   try {
-    const tenant_id = (req.headers["x-tenant-id"] as string) || "tenant-default";
+    const tenant_id = req.community_tenant_id;
+    if (!tenant_id) {
+      return res.status(400).json({ error: "Tenant context missing for community request" });
+    }
     const report = getReportById(tenant_id, req.params.id);
 
     if (!report) {
@@ -134,7 +140,10 @@ communityRouter.get("/community/reports/:id/status", async (req, res) => {
 
 communityRouter.post("/community/reports/:id/photos", requireCommunityCode, upload.array("photos", 4), async (req, res) => {
   try {
-    const tenant_id = (req.headers["x-tenant-id"] as string) || "tenant-default";
+    const tenant_id = req.community_tenant_id;
+    if (!tenant_id) {
+      return res.status(400).json({ error: "Tenant context missing for community request" });
+    }
     const report = getReportById(tenant_id, req.params.id);
 
     if (!report) {
@@ -163,9 +172,13 @@ communityRouter.post("/community/reports/:id/photos", requireCommunityCode, uplo
   }
 });
 
-communityRouter.get("/community/photos/:photoId", async (req, res) => {
+communityRouter.get("/community/photos/:photoId", requireCommunityCode, async (req, res) => {
   try {
-    const result = await getPhotoBuffer(req.params.photoId);
+    const tenant_id = req.community_tenant_id;
+    if (!tenant_id) {
+      return res.status(400).json({ error: "Tenant context missing for community request" });
+    }
+    const result = await getPhotoBuffer(req.params.photoId, tenant_id);
     if (!result) {
       return res.status(404).json({ error: "Photo not found" });
     }

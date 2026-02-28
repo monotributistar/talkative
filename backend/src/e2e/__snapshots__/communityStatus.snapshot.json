@@ -1,0 +1,9 @@
+{
+  "report_id": "<report_id>",
+  "status": "pending",
+  "submitted_at": "<iso_timestamp>",
+  "classified_at": null,
+  "classification": null,
+  "photo_count": 0,
+  "message": "Tu reporte está siendo procesado."
+}
