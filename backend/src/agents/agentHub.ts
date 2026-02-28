@@ -77,7 +77,7 @@ export class AgentHub {
     tenant_id?: string;
     name: string;
     workspace?: string;
-    template?: "mail-triage" | "git-watcher" | "monthly-bookkeeping";
+    template?: "mail-triage" | "git-watcher" | "monthly-bookkeeping" | "community-classifier";
   }): Promise<AgentRecord> {
     const id = input.id?.trim() || nanoid(8);
     if (this.getAgent(id)) {
