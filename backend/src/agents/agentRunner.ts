@@ -302,6 +302,67 @@ export class AgentRunner {
       reply += " Heartbeat executed.";
     }
 
+    // ── Community classifier skill trigger ──
+    const hasCommunitySkill = this.skills.some((skill) => skill.id === "community-classifier");
+    if (hasCommunitySkill && (lower.includes("clasificar") || lower.includes("classify") || lower.includes("reportes") || lower.includes("reports") || lower.includes("denuncias"))) {
+      const command =
+        "node skills/community-classifier/scripts/classifyReports.ts --input inputs/pending-reports.json --output outputs/classification-report.json";
+      try {
+        events.push(await this.emit("TOOL_RUN_STARTED", "Community classifier started", { run_id, command }));
+        const result = await runWorkspaceTool(this.agent.workspace, command);
+
+        if (result.ok) {
+          actions.push({ type: "tool.executed", data: { command, output: "outputs/classification-report.json" } });
+          reply += " Community classification completed — wrote outputs/classification-report.json.";
+
+          // Auto-mark classified reports so the pending queue is cleared
+          try {
+            const { getLatestClassification, markReportsClassified } = await import("../community/store.js");
+            const report = await getLatestClassification(this.agent.workspace);
+            if (report?.data?.items?.length) {
+              const ids = report.data.items.map((i: { report_id: string }) => i.report_id);
+              await markReportsClassified(this.agent.workspace, ids);
+            }
+          } catch {
+            // Best-effort — don't break the flow if marking fails
+          }
+        } else {
+          actions.push({ type: "tool.failed", data: { command } });
+          reply += " Community classification failed.";
+        }
+
+        events.push(
+          await this.emit("TOOL_RUN_FINISHED", result.ok ? "Community classifier executed" : "Community classifier failed", {
+            run_id,
+            command,
+            ok: result.ok,
+            error: result.error,
+            metrics: result.metrics,
+            artifacts: result.artifacts,
+            skillReport: result.skillReport
+          })
+        );
+        events.push(
+          await this.emit("METRIC_RECORDED", "Community classifier metric recorded", {
+            run_id,
+            command,
+            runMs: result.metrics.duration_ms,
+            exitCode: result.metrics.exit_code
+          })
+        );
+      } catch (error) {
+        actions.push({ type: "tool.failed", data: { command } });
+        events.push(
+          await this.emit("TOOL_RUN_FINISHED", "Community classifier rejected", {
+            run_id,
+            error: (error as Error).message,
+            ok: false
+          })
+        );
+        reply += " Community classifier command rejected by safety rules.";
+      }
+    }
+
     const hasMailSkill = this.skills.some((skill) => skill.id === "mail-triage");
     if (hasMailSkill && (lower.includes("triage") || lower.includes("email"))) {
       const command =

@@ -22,6 +22,8 @@ export interface AgentRecord {
   workspace: string;
   status: AgentStatus;
   heartbeatMinutes: number;
+  /** Template used to create this agent (e.g. "community-classifier") */
+  template?: string;
   lastHeartbeatAt?: string;
   lastMessageAt?: string;
   lastMessage?: string;

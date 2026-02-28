@@ -1,0 +1,470 @@
+/* ── Resident App — Standalone mobile-first styles ────────── */
+
+.resident-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+
+.resident-app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-card-border);
+  margin-bottom: 16px;
+}
+
+.resident-app-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.resident-app-logo {
+  font-size: 1.5rem;
+}
+
+.resident-app-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* ── Main ─────────────────────────────────────────────────── */
+
+.resident-app-main {
+  flex: 1;
+}
+
+/* ── Footer ───────────────────────────────────────────────── */
+
+.resident-app-footer {
+  padding: 20px 0;
+  text-align: center;
+  border-top: 1px solid var(--color-card-border);
+  margin-top: 24px;
+}
+
+.resident-app-footer p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+/* ── Gate (community code) ────────────────────────────────── */
+
+.gate {
+  text-align: center;
+  padding: 48px 16px;
+}
+
+.gate-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.gate h2 {
+  margin: 0 0 8px;
+  color: var(--color-text);
+}
+
+.gate-desc {
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  margin: 0 0 24px;
+}
+
+.gate-input {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto 12px;
+  padding: 16px;
+  font-size: 1.1rem;
+  text-align: center;
+  letter-spacing: 2px;
+  border-radius: 14px;
+  border: 1px solid var(--color-input-border);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  font-family: inherit;
+}
+
+.gate-input:focus {
+  outline: none;
+  border-color: var(--color-chip-active-border);
+}
+
+.gate-error {
+  color: var(--color-urg-emergency);
+  font-size: 0.88rem;
+  margin: 0 0 12px;
+}
+
+.category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip-emoji { font-size: 1.1rem; }
+.chip-label { font-size: 0.85rem; }
+
+.hint-text {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 0;
+  padding: 0 4px;
+}
+
+.photo-count {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin: 4px 0 0;
+}
+
+/* ── Code Gate ───────────────────────────────────────────── */
+
+.gate {
+  text-align: center;
+  padding: 48px 16px;
+}
+
+.gate-icon {
+  font-size: 3.5rem;
+  margin-bottom: 12px;
+}
+
+.gate-title {
+  font-size: 1.5rem;
+  margin: 0 0 8px;
+  color: var(--color-text);
+}
+
+.gate-desc {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  margin: 0 0 24px;
+}
+
+.gate-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.gate-input {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--color-input-border);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  font-size: 1.1rem;
+  text-align: center;
+  font-family: inherit;
+  letter-spacing: 2px;
+}
+
+.gate-input:focus {
+  outline: none;
+  border-color: var(--color-chip-active-border);
+}
+
+.gate-help {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  margin-top: 24px;
+}
+
+/* ── Report Form ──────────────────────────────────────────── */
+
+.report-form-container {
+  padding: 8px 0;
+}
+
+.report-form-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.report-form-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--color-text);
+}
+
+.report-form-header p {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin: 4px 0 0;
+}
+
+.report-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.report-textarea {
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--color-input-border);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+  width: 100%;
+}
+
+.report-textarea:focus {
+  outline: none;
+  border-color: var(--color-chip-active-border);
+}
+
+.report-location {
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--color-input-border);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  font-size: 1rem;
+  font-family: inherit;
+  width: 100%;
+}
+
+.report-location:focus {
+  outline: none;
+  border-color: var(--color-chip-active-border);
+}
+
+.report-submit {
+  padding: 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 14px;
+  background: var(--color-btn-primary);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  width: 100%;
+}
+
+.report-submit:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.report-submit:disabled {
+  background: var(--color-btn-disabled);
+  cursor: not-allowed;
+}
+
+.report-error {
+  color: var(--color-urg-emergency);
+  font-size: 0.88rem;
+  text-align: center;
+  margin: 0;
+}
+
+/* ── Report Tracker ───────────────────────────────────────── */
+
+.tracker {
+  text-align: center;
+  padding: 16px 0;
+}
+
+.tracker-icon {
+  margin-bottom: 12px;
+}
+
+.tracker-pulse {
+  font-size: 3rem;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.tracker-done {
+  font-size: 3rem;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.95); }
+}
+
+.tracker-title {
+  margin: 0 0 8px;
+  font-size: 1.3rem;
+  color: var(--color-text);
+}
+
+.tracker-message {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  margin: 0 0 20px;
+}
+
+/* ── Classification result card ───────────────────────────── */
+
+.tracker-result {
+  border: 1px solid var(--color-card-border);
+  border-radius: 12px;
+  background: var(--color-card-bg);
+  padding: 16px;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.tracker-result-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.tracker-routed-label {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tracker-routed-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  text-transform: capitalize;
+}
+
+.tracker-result-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.tracker-result-summary {
+  font-size: 0.92rem;
+  line-height: 1.4;
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* ── Timeline ─────────────────────────────────────────────── */
+
+.tracker-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 20px auto;
+  max-width: 300px;
+  text-align: left;
+}
+
+.tracker-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  position: relative;
+}
+
+.tracker-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 30px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--color-card-border);
+}
+
+.tracker-step.completed:not(:last-child)::after {
+  background: var(--color-btn-primary);
+}
+
+.tracker-step-dot {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  border-radius: 50%;
+  background: var(--color-card-border);
+  margin-top: 2px;
+}
+
+.tracker-step.completed .tracker-step-dot {
+  background: var(--color-btn-primary);
+}
+
+.tracker-step.pending .tracker-step-dot {
+  background: var(--color-urg-high);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.tracker-step.future .tracker-step-dot {
+  background: var(--color-card-border);
+  opacity: 0.5;
+}
+
+.tracker-step-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tracker-step-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.tracker-step.future .tracker-step-label {
+  color: var(--color-text-muted);
+  opacity: 0.5;
+}
+
+.tracker-step-time {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+/* ── Tracker actions ──────────────────────────────────────── */
+
+.tracker-polling {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin: 12px 0;
+}
+
+.tracker-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.tracker-share {
+  padding: 12px;
+  font-size: 0.92rem;
+  border-radius: 12px;
+  border: 1px solid var(--color-card-border);
+  background: var(--color-card-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  width: 100%;
+  transition: opacity 0.2s;
+}
+
+.tracker-share:hover {
+  opacity: 0.85;
+}

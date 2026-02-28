@@ -18,6 +18,7 @@ import { promptRouter } from "./routes/promptRoutes.js";
 import { routerAdminRouter } from "./routes/routerAdminRoutes.js";
 import { webhookRouter } from "./routes/webhookRoutes.js";
 import { workflowRouter } from "./routes/workflowRoutes.js";
+import { communityRouter } from "./community/routesV2.js";
 import { subscribeEvents } from "./services/eventBus.js";
 
 export async function createApp() {
@@ -36,6 +37,10 @@ export async function createApp() {
   });
 
   app.use(metricsRouter);
+
+  // Community routes go BEFORE global auth — they have their own middleware
+  app.use(communityRouter);
+
   app.use(authenticateRequest);
   app.use(enforceTenantContext);
   app.use(authorizeRoleForRequest);

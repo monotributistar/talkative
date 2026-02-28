@@ -16,7 +16,7 @@ agentRouter.post("/agents", async (req, res) => {
       tenant_id?: string;
       name?: string;
       workspace?: string;
-      template?: "mail-triage" | "git-watcher" | "monthly-bookkeeping";
+      template?: "mail-triage" | "git-watcher" | "monthly-bookkeeping" | "community-classifier";
     };
 
     if (!name) {

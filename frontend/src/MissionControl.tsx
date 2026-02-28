@@ -13,8 +13,8 @@ import {
 } from "./api";
 import { AgentEvent, AgentRecord, AgentSkill, ApprovalRequest } from "./types";
 
-const TEMPLATE_OPTIONS = ["mail-triage", "git-watcher", "monthly-bookkeeping"] as const;
-const SKILL_OPTIONS = ["mail-triage", "git-watcher", "monthly-bookkeeping"] as const;
+const TEMPLATE_OPTIONS = ["mail-triage", "git-watcher", "monthly-bookkeeping", "community-classifier"] as const;
+const SKILL_OPTIONS = ["mail-triage", "git-watcher", "monthly-bookkeeping", "community-classifier"] as const;
 
 export default function MissionControl() {
   const [agents, setAgents] = useState<AgentRecord[]>([]);
