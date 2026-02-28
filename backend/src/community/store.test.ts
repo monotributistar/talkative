@@ -16,7 +16,6 @@ import { tmpdir } from "node:os";
 import {
   ingestReport,
   getReports,
-  getLatestClassification,
   markReportsClassified,
   buildDashboard,
   isLikelyUrgent,

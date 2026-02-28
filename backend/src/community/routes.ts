@@ -13,7 +13,7 @@
 
 import { Router } from "express";
 import { agentHub } from "../agents/agentHub.js";
-import { ensureTenantMatch, getTenantIdOrThrow } from "../tenancy/guard.js";
+import { getTenantIdOrThrow } from "../tenancy/guard.js";
 import {
   ingestReport,
   getReports,
