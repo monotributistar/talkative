@@ -3,8 +3,11 @@
  *
  * Now backed by SQLite store, with auth middleware and photo upload.
  *
- * Public (community code):
+ * Public (no auth):
  *   POST /community/auth/validate-code
+ *   POST /community/auth/login
+ *
+ * Resident (community code required):
  *   POST /community/reports
  *   GET  /community/reports/:id/status
  *   POST /community/reports/:id/photos
