@@ -102,6 +102,7 @@ communityRouter.post("/community/reports", requireCommunityCode, async (req, res
   }
 });
 
+// Security: resident status lookup must always require community code.
 communityRouter.get("/community/reports/:id/status", requireCommunityCode, async (req, res) => {
   try {
     const tenant_id = req.community_tenant_id;
@@ -176,6 +177,7 @@ communityRouter.post("/community/reports/:id/photos", requireCommunityCode, uplo
   }
 });
 
+// Security: photo content is protected and tenant-scoped via community code.
 communityRouter.get("/community/photos/:photoId", requireCommunityCode, async (req, res) => {
   try {
     const tenant_id = req.community_tenant_id;
