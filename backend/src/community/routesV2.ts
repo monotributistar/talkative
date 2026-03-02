@@ -37,6 +37,7 @@ import {
 } from "./storeSqlite.js";
 import { savePhoto, getPhotosForReport, getPhotoBuffer } from "./photoStorage.js";
 import { requireCommunityCode, requireOperator, handleLogin, handleValidateCode } from "./auth.js";
+import { classifyPendingReports } from "./classifyService.js";
 
 export const communityRouter = Router();
 
@@ -223,18 +224,15 @@ communityRouter.get("/community/dashboard", requireOperator, async (req, res) =>
 communityRouter.post("/community/classify", requireOperator, async (req, res) => {
   try {
     const tenant_id = getTenantIdOrThrow(req);
-    const agent = agentHub.findByTemplate("community-classifier", tenant_id);
+    const result = await classifyPendingReports(tenant_id);
 
-    if (!agent) {
-      return res.status(404).json({ error: "No community agent found" });
-    }
-
-    if (agent.status !== "running") {
-      return res.status(400).json({ error: "Community agent is not running" });
-    }
-
-    const response = await agentHub.sendMessage(agent.id, "clasificar reportes pendientes", tenant_id);
-    return res.json({ triggered: true, agent_id: agent.id, response: response.reply });
+    return res.json({
+      ok: result.ok,
+      classified: result.classified,
+      failed: result.failed,
+      duration_ms: result.durationMs,
+      items: result.items,
+    });
   } catch (error) {
     return res.status(500).json({ error: (error as Error).message });
   }

@@ -284,9 +284,8 @@ export default function CommunityDashboard() {
 
   return (
     <div className="dash-container">
-      {/* Header with logout */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h2 style={{ margin: 0 }}>Panel de Seguridad</h2>
+      {/* Logout button (title already in App.tsx header) */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
         <button
           onClick={() => { localStorage.removeItem("operator-token"); setLoggedIn(false); }}
           style={{ background: "none", border: "1px solid var(--color-border, #333)", borderRadius: 6, padding: "6px 12px", color: "var(--color-text-muted)", cursor: "pointer", fontSize: "0.8rem" }}

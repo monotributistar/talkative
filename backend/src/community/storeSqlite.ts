@@ -226,7 +226,8 @@ export function markReportsClassified(
       subcategory = ?,
       routed_to = ?,
       summary = ?,
-      confidence = ?
+      confidence = ?,
+      address_hint = COALESCE(?, address_hint)
     WHERE id = ? AND tenant_id = ?
   `);
 
@@ -240,6 +241,7 @@ export function markReportsClassified(
         item.routed_to,
         item.summary,
         item.confidence,
+        item.location_normalized,
         item.report_id,
         tenant_id,
       );

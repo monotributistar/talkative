@@ -1,18 +1,19 @@
 {
   "agents": [
     {
-      "id": "agent-mail",
-      "agent_id": "agent-mail",
+      "id": "MMz715U_",
+      "agent_id": "MMz715U_",
       "tenant_id": "tenant-default",
-      "name": "Mail Triage Agent",
-      "workspace": "/Users/monotributistar/SOURCES/Talkative /workspace/agent-mail",
-      "status": "stopped",
+      "name": "community-classifier",
+      "workspace": "C:\\Users\\Stephano\\Desktop\\SANDBOX\\talkative\\workspace\\MMz715U_",
+      "status": "running",
       "heartbeatMinutes": 30,
-      "lastHeartbeatAt": null,
-      "lastMessageAt": null,
-      "lastMessage": null,
-      "createdAt": "2026-02-15T00:00:00.000Z",
-      "updatedAt": "2026-02-15T00:00:00.000Z"
+      "template": "community-classifier",
+      "createdAt": "2026-03-01T14:04:09.187Z",
+      "updatedAt": "2026-03-02T09:53:15.657Z",
+      "lastMessageAt": "2026-03-01T14:07:20.119Z",
+      "lastMessage": "clasificar reportes pendientes",
+      "lastHeartbeatAt": "2026-03-02T01:01:44.129Z"
     }
   ]
 }
