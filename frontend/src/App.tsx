@@ -3,8 +3,9 @@ import MissionControl from "./MissionControl";
 import RouterAdmin from "./RouterAdmin";
 import WorkflowEditor from "./WorkflowEditor";
 import CommunityDashboard from "./CommunityDashboard";
+import StatsDashboard from "./dashboard/StatsDashboard";
 
-type View = "mission" | "workflow" | "router-admin" | "dashboard";
+type View = "mission" | "workflow" | "router-admin" | "dashboard" | "stats";
 
 function resolveInitialView(): View {
   const pathname = window.location.pathname;
@@ -12,6 +13,7 @@ function resolveInitialView(): View {
   if (pathname === "/workflow") return "workflow";
 
   if (pathname === "/dashboard") return "dashboard";
+  if (pathname === "/stats") return "stats";
   return "mission";
 }
 
@@ -32,6 +34,7 @@ export default function App() {
       workflow: "/workflow",
       "router-admin": "/router-admin",
       dashboard: "/dashboard",
+      stats: "/stats",
     };
     window.history.replaceState({}, "", pathMap[next]);
   }
@@ -64,6 +67,9 @@ export default function App() {
           <button className={view === "dashboard" ? "tab active tab-community" : "tab tab-community"} onClick={() => setViewWithPath("dashboard")}>
             📊 Dashboard
           </button>
+          <button className={view === "stats" ? "tab active tab-community" : "tab tab-community"} onClick={() => setViewWithPath("stats")}>
+            📈 Estadísticas
+          </button>
         </div>
       </header>
 
@@ -71,6 +77,7 @@ export default function App() {
       {view === "workflow" && <WorkflowEditor />}
       {view === "router-admin" && <RouterAdmin />}
       {view === "dashboard" && <CommunityDashboard />}
+      {view === "stats" && <StatsDashboard />}
     </div>
   );
 }

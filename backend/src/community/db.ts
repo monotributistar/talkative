@@ -83,6 +83,10 @@ function migrate(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_reports_tenant ON reports(tenant_id);
     CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(tenant_id, status);
     CREATE INDEX IF NOT EXISTS idx_reports_created ON reports(tenant_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_reports_category ON reports(tenant_id, category);
+    CREATE INDEX IF NOT EXISTS idx_reports_urgency ON reports(tenant_id, urgency);
+    CREATE INDEX IF NOT EXISTS idx_reports_routed ON reports(tenant_id, routed_to);
+    CREATE INDEX IF NOT EXISTS idx_reports_address ON reports(tenant_id, address_hint);
 
     CREATE TABLE IF NOT EXISTS photos (
       id         TEXT PRIMARY KEY,
