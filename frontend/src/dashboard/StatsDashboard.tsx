@@ -14,7 +14,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import "./stats.css";
 import { useStatsData } from "./useStatsData.js";
 import { downloadExport } from "./statsApi.js";
-import type { DateRange, KPISummary, CategoriesResponse, HotspotsResponse, ByHourResponse, HotspotStat, ReportGeo } from "./statsTypes.js";
+import type { DateRange, KPISummary, CategoriesResponse, HotspotsResponse, ByHourResponse, ReportGeo } from "./statsTypes.js";
 
 // ── Constants ──────────────────────────────────────────────
 
@@ -100,7 +100,7 @@ function StatsMap({ reports }: { reports: ReportGeo[] }) {
           },
         }).addTo(mapInst.current);
         heatLayer.current = hl;
-      } catch (_) { /* ignore */ }
+      } catch { /* ignore */ }
     };
 
     // Clusters with individual report markers

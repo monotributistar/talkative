@@ -98,7 +98,6 @@ export function fetchReportsGeo(range: DateRange, category?: string): Promise<im
 
 export function getExportURL(range: DateRange): string {
   const params = new URLSearchParams(rangeParams(range));
-  const token = getOperatorToken();
   // We can't add headers to a download link, so we'll use a fetch-based download
   return `${API_BASE}/community/stats/export?${params.toString()}`;
 }
