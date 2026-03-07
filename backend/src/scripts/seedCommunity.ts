@@ -348,7 +348,7 @@ function generateTimestamp(daysBack: number, bias: "night" | "day" | "any"): str
 }
 
 /** Build a summary from the report text */
-function buildSummary(text: string, _category: string): string {
+function buildSummary(text: string): string {
   // Limpiar y acortar
   const clean = text.replace(/[!]+/g, ".").replace(/\s+/g, " ").trim();
   if (clean.length <= 80) return clean;
@@ -423,7 +423,7 @@ function seed(): void {
 
       const urgency = rand(tmpl.urgency_min, tmpl.urgency_max);
       const confidence = randFloat(tmpl.confidence_min, tmpl.confidence_max);
-      const summary = buildSummary(text, tmpl.category);
+      const summary = buildSummary(text);
 
       // Classified reports get a classified_at 1-30 min after created_at
       const classifiedAt = isPending
