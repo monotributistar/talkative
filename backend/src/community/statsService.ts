@@ -92,9 +92,7 @@ function db(): Database.Database {
   return getDb();
 }
 
-function isoNow(): string {
-  return new Date().toISOString();
-}
+// function isoNow(): string { return new Date().toISOString(); }
 
 function daysAgo(n: number): string {
   return new Date(Date.now() - n * 86400000).toISOString();
@@ -106,19 +104,9 @@ function startOfToday(): string {
   return d.toISOString();
 }
 
-function startOfWeek(): string {
-  const d = new Date();
-  d.setDate(d.getDate() - d.getDay());
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
-
-function startOfMonth(): string {
-  const d = new Date();
-  d.setDate(1);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
+// startOfWeek and startOfMonth reserved for future granularity filters
+// function startOfWeek(): string { ... }
+// function startOfMonth(): string { ... }
 
 // ── A1: Timeline ───────────────────────────────────────────
 
@@ -300,7 +288,6 @@ export function getHotspots(
 
 export function getKPISummary(tenant_id: string): KPISummary {
   const d = db();
-  const now = isoNow();
   const todayStart = startOfToday();
   const weekStart = daysAgo(7);
   const lastWeekStart = daysAgo(14);

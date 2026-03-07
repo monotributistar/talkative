@@ -348,7 +348,7 @@ function generateTimestamp(daysBack: number, bias: "night" | "day" | "any"): str
 }
 
 /** Build a summary from the report text */
-function buildSummary(text: string, category: string): string {
+function buildSummary(text: string, _category: string): string {
   // Limpiar y acortar
   const clean = text.replace(/[!]+/g, ".").replace(/\s+/g, " ").trim();
   if (clean.length <= 80) return clean;
