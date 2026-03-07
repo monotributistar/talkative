@@ -45,13 +45,13 @@ const RANGE_PRESETS: Array<{ label: string; range: DateRange }> = [
 
 // ── Leaflet Map ────────────────────────────────────────────
 
-declare const L: typeof import("leaflet");
+declare const L: any;
 
 function StatsMap({ reports }: { reports: ReportGeo[] }) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInst = useRef<L.Map | null>(null);
-  const markersLayer = useRef<L.LayerGroup | null>(null);
-  const heatLayer = useRef<L.Layer | null>(null);
+  const mapInst = useRef<any>(null);
+  const markersLayer = useRef<any>(null);
+  const heatLayer = useRef<any>(null);
 
   useEffect(() => {
     if (!mapRef.current || mapInst.current) return;
