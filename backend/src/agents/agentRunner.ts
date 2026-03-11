@@ -315,17 +315,9 @@ export class AgentRunner {
           actions.push({ type: "tool.executed", data: { command, output: "outputs/classification-report.json" } });
           reply += " Community classification completed — wrote outputs/classification-report.json.";
 
-          // Auto-mark classified reports so the pending queue is cleared
-          try {
-            const { getLatestClassification, markReportsClassified } = await import("../community/store.js");
-            const report = await getLatestClassification(this.agent.workspace);
-            if (report?.data?.items?.length) {
-              const ids = report.data.items.map((i: { report_id: string }) => i.report_id);
-              await markReportsClassified(this.agent.workspace, ids);
-            }
-          } catch {
-            // Best-effort — don't break the flow if marking fails
-          }
+          // NOTE: Auto-marking was handled by the old filesystem store (store.ts).
+          // Now classification goes through classifyService.ts which writes directly to SQLite.
+          // This agent code path is deprecated — kept for backward compat with agentRunner.
         } else {
           actions.push({ type: "tool.failed", data: { command } });
           reply += " Community classification failed.";
