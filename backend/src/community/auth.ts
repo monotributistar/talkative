@@ -109,6 +109,14 @@ export function requireOperator(req: Request, res: Response, next: NextFunction)
     return;
   }
 
+  // Security: bind operator to configured tenant — ignore x-tenant-id header.
+  // This prevents tenant spoofing (P0 finding from PR #35 review).
+  // Future: derive tenant from JWT token for multi-tenant support.
+  const tenantId = COMMUNITY_TENANT_ID;
+  req.community_tenant_id = tenantId;
+  if (!req.context) (req as any).context = {};
+  (req as any).context.tenant_id = tenantId;
+
   next();
 }
 
