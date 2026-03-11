@@ -5,7 +5,14 @@ import {
   triggerClassification,
   operatorLogin,
   generateWeeklySummary,
+  getIncidents,
+  getSuggestions,
+  confirmSuggestion,
+  dismissSuggestion,
+  updateIncidentStatus,
+  createIncident,
 } from "./api";
+import type { Incident, IncidentSuggestion, IncidentStatus } from "./api";
 
 // ── Operator Login Gate ────────────────────────────────────
 
@@ -189,6 +196,194 @@ function urgencyClass(u: number): string {
   return "urg-low";
 }
 
+// ── Status helpers ────────────────────────────────────────
+
+const STATUS_LABEL: Record<IncidentStatus, string> = {
+  open: "Abierto",
+  in_progress: "En proceso",
+  resolved: "Resuelto",
+  closed: "Cerrado",
+  re_opened: "Reabierto",
+};
+
+const STATUS_COLOR: Record<IncidentStatus, string> = {
+  open: "#e74c3c",
+  in_progress: "#e67e22",
+  resolved: "#2ecc71",
+  closed: "#888",
+  re_opened: "#f1c40f",
+};
+
+// ── Incidents Panel ────────────────────────────────────────
+
+function IncidentsPanel() {
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [suggestions, setSuggestions] = useState<IncidentSuggestion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newCategory, setNewCategory] = useState("seguridad");
+  const [newZone, setNewZone] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<IncidentStatus | "all">("all");
+
+  async function load() {
+    setLoading(true);
+    try {
+      const [inc, sug] = await Promise.all([getIncidents(), getSuggestions()]);
+      setIncidents(inc.incidents);
+      setSuggestions(sug.suggestions);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  }
+
+  useEffect(() => { void load(); }, []);
+
+  async function handleStatusChange(id: string, status: IncidentStatus) {
+    let note: string | undefined;
+    if (status === "resolved") note = prompt("Nota de resolución (opcional):") ?? undefined;
+    await updateIncidentStatus(id, status, note);
+    setSelected(null);
+    void load();
+  }
+
+  async function handleCreate() {
+    if (!newTitle.trim()) return;
+    setCreating(true);
+    try {
+      await createIncident({ title: newTitle.trim(), category: newCategory, zone: newZone.trim() || undefined });
+      setNewTitle(""); setNewCategory("seguridad"); setNewZone("");
+      setShowCreate(false);
+      void load();
+    } finally { setCreating(false); }
+  }
+
+  const filtered = filterStatus === "all" ? incidents : incidents.filter(i => i.status === filterStatus);
+
+  if (loading) return <div className="dash-loading">Cargando incidentes...</div>;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+      {suggestions.length > 0 && (
+        <div className="card" style={{ borderLeft: "4px solid #f1c40f", padding: 16 }}>
+          <h3 style={{ marginBottom: 12 }}>⚠️ {suggestions.length} sugerencia{suggestions.length > 1 ? "s" : ""} del clasificador</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {suggestions.map(s => (
+              <div key={s.report_id} style={{ background: "var(--color-bg-secondary,#1a1a2e)", borderRadius: 8, padding: 12 }}>
+                <div style={{ fontSize: "0.85rem" }}>{s.report_summary || s.report_text.slice(0, 100)}</div>
+                <div style={{ fontSize: "0.8rem", color: "#f1c40f", marginTop: 4 }}>
+                  Sugiere vincular al incidente <strong>…{s.suggestion.incident_id.slice(-6)}</strong> — {Math.round(s.suggestion.confidence * 100)}% confianza
+                </div>
+                <div style={{ fontSize: "0.75rem", opacity: 0.7, marginTop: 2 }}>{s.suggestion.reasoning}</div>
+                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <button onClick={() => { confirmSuggestion(s.report_id).then(load); }}
+                    style={{ padding: "4px 12px", borderRadius: 6, background: "#2ecc71", color: "#000", border: "none", cursor: "pointer", fontSize: "0.8rem" }}>✓ Confirmar</button>
+                  <button onClick={() => { dismissSuggestion(s.report_id).then(load); }}
+                    style={{ padding: "4px 12px", borderRadius: 6, background: "transparent", color: "var(--color-text)", border: "1px solid #555", cursor: "pointer", fontSize: "0.8rem" }}>✕ Descartar</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {(["all", "open", "in_progress", "resolved", "closed"] as const).map(s => (
+            <button key={s} onClick={() => setFilterStatus(s)} style={{
+              padding: "4px 12px", borderRadius: 20, border: "1px solid", fontSize: "0.8rem", cursor: "pointer",
+              borderColor: filterStatus === s ? (s === "all" ? "#888" : STATUS_COLOR[s]) : "#444",
+              background: filterStatus === s ? "rgba(255,255,255,0.05)" : "transparent",
+              color: filterStatus === s && s !== "all" ? STATUS_COLOR[s] : "var(--color-text)",
+            }}>
+              {s === "all" ? "Todos" : STATUS_LABEL[s]}
+            </button>
+          ))}
+        </div>
+        <button onClick={() => setShowCreate(!showCreate)} className="classify-btn" style={{ padding: "6px 16px", fontSize: "0.85rem" }}>
+          + Nuevo incidente
+        </button>
+      </div>
+
+      {showCreate && (
+        <div className="card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+          <h4 style={{ margin: 0 }}>Crear incidente manualmente</h4>
+          <input placeholder="Título" value={newTitle} onChange={e => setNewTitle(e.target.value)}
+            style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #444", background: "var(--color-input-bg,#1a1a2e)", color: "var(--color-text)", fontSize: "0.9rem" }} />
+          <div style={{ display: "flex", gap: 8 }}>
+            <select value={newCategory} onChange={e => setNewCategory(e.target.value)}
+              style={{ flex: 1, padding: "8px 12px", borderRadius: 6, border: "1px solid #444", background: "var(--color-input-bg,#1a1a2e)", color: "var(--color-text)", fontSize: "0.9rem" }}>
+              {["seguridad","bomberos","municipal","fiscalizacion","vialidad","convivencia"].map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <input placeholder="Zona (opcional)" value={newZone} onChange={e => setNewZone(e.target.value)}
+              style={{ flex: 1, padding: "8px 12px", borderRadius: 6, border: "1px solid #444", background: "var(--color-input-bg,#1a1a2e)", color: "var(--color-text)", fontSize: "0.9rem" }} />
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={handleCreate} disabled={!newTitle.trim() || creating} className="classify-btn" style={{ flex: 1 }}>{creating ? "Creando..." : "Crear"}</button>
+            <button onClick={() => setShowCreate(false)} style={{ flex: 1, padding: 8, borderRadius: 6, border: "1px solid #444", background: "transparent", color: "var(--color-text)", cursor: "pointer" }}>Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {filtered.length === 0 ? (
+        <div className="card" style={{ padding: 20, textAlign: "center" }}>
+          <p className="muted">No hay incidentes {filterStatus !== "all" ? `con estado "${STATUS_LABEL[filterStatus]}"` : "registrados"}.</p>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {filtered.map(incident => (
+            <div key={incident.id} className="card"
+              style={{ padding: 14, cursor: "pointer", borderLeft: `4px solid ${STATUS_COLOR[incident.status]}` }}
+              onClick={() => setSelected(selected === incident.id ? null : incident.id)}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <span style={{ fontWeight: 600, fontSize: "0.95rem" }}>{incident.title}</span>
+                  <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", marginTop: 2 }}>
+                    {CATEGORY_EMOJI[incident.category] ?? "📌"} {incident.category}
+                    {incident.zone && <span> · {incident.zone}</span>}
+                    {incident.report_count != null && <span> · {incident.report_count} reporte{incident.report_count !== 1 ? "s" : ""}</span>}
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                  <span style={{ fontSize: "0.75rem", padding: "2px 8px", borderRadius: 10, background: `${STATUS_COLOR[incident.status]}22`, color: STATUS_COLOR[incident.status], fontWeight: 600 }}>
+                    {STATUS_LABEL[incident.status]}
+                  </span>
+                  <span style={{ fontSize: "0.7rem", color: "var(--color-text-muted)" }}>
+                    {new Date(incident.updated_at).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+              {selected === incident.id && (
+                <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #333", display: "flex", flexWrap: "wrap", gap: 6 }}
+                  onClick={e => e.stopPropagation()}>
+                  {incident.status === "open" && (
+                    <button onClick={() => handleStatusChange(incident.id, "in_progress")}
+                      style={{ padding: "4px 10px", borderRadius: 6, background: "#e67e2222", color: "#e67e22", border: "1px solid #e67e22", cursor: "pointer", fontSize: "0.8rem" }}>→ En proceso</button>
+                  )}
+                  {["open","in_progress","re_opened"].includes(incident.status) && (
+                    <button onClick={() => handleStatusChange(incident.id, "resolved")}
+                      style={{ padding: "4px 10px", borderRadius: 6, background: "#2ecc7122", color: "#2ecc71", border: "1px solid #2ecc71", cursor: "pointer", fontSize: "0.8rem" }}>✓ Resolver</button>
+                  )}
+                  {incident.status === "resolved" && (
+                    <button onClick={() => handleStatusChange(incident.id, "closed")}
+                      style={{ padding: "4px 10px", borderRadius: 6, background: "#88888822", color: "#888", border: "1px solid #888", cursor: "pointer", fontSize: "0.8rem" }}>Cerrar</button>
+                  )}
+                  {incident.resolution_note && (
+                    <span style={{ fontSize: "0.78rem", color: "var(--color-text-muted)", alignSelf: "center" }}>📝 {incident.resolution_note}</span>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Dashboard ─────────────────────────────────────────
 
 export default function CommunityDashboard() {
@@ -200,6 +395,7 @@ export default function CommunityDashboard() {
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterUrgency, setFilterUrgency] = useState(0);
   const [generatingSummary, setGeneratingSummary] = useState(false);
+  const [activeTab, setActiveTab] = useState<"reportes" | "incidentes">("reportes");
 
   // Check if already has token
   useEffect(() => {
@@ -293,6 +489,25 @@ export default function CommunityDashboard() {
           Cerrar sesión
         </button>
       </div>
+
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 4, borderBottom: "1px solid #333", marginBottom: 8 }}>
+        {(["reportes", "incidentes"] as const).map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} style={{
+            padding: "8px 20px", background: "transparent", border: "none",
+            borderBottom: activeTab === tab ? "2px solid #e74c3c" : "2px solid transparent",
+            color: activeTab === tab ? "var(--color-text)" : "var(--color-text-muted)",
+            cursor: "pointer", fontSize: "0.9rem", fontWeight: activeTab === tab ? 600 : 400,
+            textTransform: "capitalize",
+          }}>
+            {tab === "reportes" ? "📋 Reportes" : "🚨 Incidentes"}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "incidentes" && <IncidentsPanel />}
+
+      {activeTab === "reportes" && <>
 
       {/* Metric cards */}
       <div className="dash-metrics-row">
@@ -481,6 +696,8 @@ export default function CommunityDashboard() {
           ))}
         </div>
       </div>
+
+      </>}
     </div>
   );
 }

@@ -365,3 +365,103 @@ export async function decideApproval(input: {
   });
   return parseOrThrow<ApprovalRequest>(response, "Failed to decide approval");
 }
+
+// ── Incidents API ──────────────────────────────────────────
+
+export type IncidentStatus = "open" | "in_progress" | "resolved" | "closed" | "re_opened";
+
+export interface Incident {
+  id: string;
+  title: string;
+  category: string;
+  status: IncidentStatus;
+  severity: number;
+  zone: string | null;
+  assigned_to: string | null;
+  resolution_note: string | null;
+  created_by: string;
+  created_at: string;
+  resolved_at: string | null;
+  updated_at: string;
+  report_count?: number;
+}
+
+export interface IncidentEvent {
+  id: string;
+  incident_id: string;
+  event_type: string;
+  payload: Record<string, unknown>;
+  created_by: string;
+  created_at: string;
+}
+
+export interface IncidentSuggestion {
+  report_id: string;
+  report_text: string;
+  report_category: string;
+  report_summary: string;
+  suggestion: { incident_id: string; confidence: number; reasoning: string };
+}
+
+export async function getIncidents(filter?: {
+  status?: IncidentStatus;
+  category?: string;
+}): Promise<{ incidents: Incident[]; total: number }> {
+  const query = new URLSearchParams();
+  if (filter?.status) query.set("status", filter.status);
+  if (filter?.category) query.set("category", filter.category);
+  const qs = query.toString();
+  const response = await apiFetch(`/community/incidents${qs ? `?${qs}` : ""}`);
+  return parseOrThrow(response, "Failed to fetch incidents");
+}
+
+export async function getIncidentDetail(id: string): Promise<{
+  incident: Incident;
+  events: IncidentEvent[];
+  linked_reports: unknown[];
+}> {
+  const response = await apiFetch(`/community/incidents/${id}`);
+  return parseOrThrow(response, "Failed to fetch incident");
+}
+
+export async function createIncident(input: {
+  title: string;
+  category: string;
+  severity?: number;
+  zone?: string;
+}): Promise<{ incident: Incident }> {
+  const response = await apiFetch("/community/incidents", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return parseOrThrow(response, "Failed to create incident");
+}
+
+export async function updateIncidentStatus(id: string, status: IncidentStatus, resolution_note?: string): Promise<{ incident: Incident }> {
+  const response = await apiFetch(`/community/incidents/${id}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status, resolution_note }),
+  });
+  return parseOrThrow(response, "Failed to update incident status");
+}
+
+export async function getSuggestions(): Promise<{ suggestions: IncidentSuggestion[]; total: number }> {
+  const response = await apiFetch("/community/reports/suggestions");
+  return parseOrThrow(response, "Failed to fetch suggestions");
+}
+
+export async function confirmSuggestion(report_id: string): Promise<{ confirmed: boolean }> {
+  const response = await apiFetch(`/community/reports/${report_id}/suggestion/confirm`, {
+    method: "POST",
+  });
+  return parseOrThrow(response, "Failed to confirm suggestion");
+}
+
+export async function dismissSuggestion(report_id: string): Promise<{ dismissed: boolean }> {
+  const response = await apiFetch(`/community/reports/${report_id}/suggestion/dismiss`, {
+    method: "POST",
+  });
+  return parseOrThrow(response, "Failed to dismiss suggestion");
+}

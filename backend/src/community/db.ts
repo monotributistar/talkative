@@ -133,5 +133,52 @@ function migrate(db: Database.Database): void {
       data        TEXT NOT NULL,
       created_at  TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS incidents (
+      id              TEXT PRIMARY KEY,
+      tenant_id       TEXT NOT NULL,
+      title           TEXT NOT NULL,
+      category        TEXT NOT NULL,
+      status          TEXT NOT NULL DEFAULT 'open',
+      severity        INTEGER NOT NULL DEFAULT 1,
+      zone            TEXT,
+      lat             REAL,
+      lng             REAL,
+      assigned_to     TEXT,
+      resolution_note TEXT,
+      created_by      TEXT NOT NULL DEFAULT 'system',
+      created_at      TEXT NOT NULL,
+      resolved_at     TEXT,
+      updated_at      TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_incidents_tenant   ON incidents(tenant_id);
+    CREATE INDEX IF NOT EXISTS idx_incidents_status   ON incidents(tenant_id, status);
+    CREATE INDEX IF NOT EXISTS idx_incidents_category ON incidents(tenant_id, category);
+
+    CREATE TABLE IF NOT EXISTS incident_events (
+      id          TEXT PRIMARY KEY,
+      incident_id TEXT NOT NULL,
+      event_type  TEXT NOT NULL,
+      payload     TEXT NOT NULL,
+      created_by  TEXT NOT NULL,
+      created_at  TEXT NOT NULL,
+      FOREIGN KEY (incident_id) REFERENCES incidents(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_events_incident ON incident_events(incident_id);
   `);
+
+  // Additive migration: add incident_id to reports if it doesn't exist yet
+  const cols = db.prepare("PRAGMA table_info(reports)").all() as Array<{ name: string }>;
+  const hasIncidentId = cols.some((c) => c.name === "incident_id");
+  if (!hasIncidentId) {
+    db.exec(`ALTER TABLE reports ADD COLUMN incident_id TEXT REFERENCES incidents(id)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_reports_incident ON reports(incident_id)`);
+  }
+
+  const hasSuggestion = cols.some((c) => c.name === "incident_suggestion");
+  if (!hasSuggestion) {
+    db.exec(`ALTER TABLE reports ADD COLUMN incident_suggestion TEXT`);
+  }
 }

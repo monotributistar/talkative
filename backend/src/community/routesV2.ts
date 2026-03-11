@@ -35,6 +35,17 @@ import {
   generateWeeklySummary,
   getWeeklySummaries,
 } from "./storeSqlite.js";
+import {
+  createIncident,
+  getIncidents,
+  getIncidentById,
+  getIncidentEvents,
+  updateIncidentStatus,
+  assignIncident,
+  linkReportToIncident,
+  unlinkReportFromIncident,
+} from "./incidentStore.js";
+import type { IncidentStatus } from "./incidentStore.js";
 import { savePhoto, getPhotosForReport, getPhotoBuffer } from "./photoStorage.js";
 import { requireCommunityCode, requireOperator, handleLogin, handleValidateCode } from "./auth.js";
 import { classifyPendingReports } from "./classifyService.js";
@@ -258,6 +269,233 @@ communityRouter.post("/community/weekly-summary/generate", requireOperator, asyn
     const tenant_id = getTenantIdOrThrow(req);
     const summary = generateWeeklySummary(tenant_id);
     return res.json({ summary });
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// ── Incident endpoints (operator only) ────────────────────
+//
+// GET    /community/incidents              — list, filterable by status/category
+// POST   /community/incidents              — create incident manually
+// GET    /community/incidents/:id          — detail + event history
+// PATCH  /community/incidents/:id/status   — transition status
+// PATCH  /community/incidents/:id/assign   — assign to operator
+// POST   /community/incidents/:id/reports  — link a report
+// DELETE /community/incidents/:id/reports/:report_id — unlink a report
+// GET    /community/reports/suggestions    — reports with pending LLM suggestions
+// POST   /community/reports/:id/suggestion/confirm  — operator confirms suggestion
+// POST   /community/reports/:id/suggestion/dismiss  — operator dismisses suggestion
+
+communityRouter.get("/community/incidents", requireOperator, async (req, res) => {
+  try {
+    const tenant_id = getTenantIdOrThrow(req);
+    const status = req.query.status as IncidentStatus | undefined;
+    const category = req.query.category as string | undefined;
+    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+
+    const incidents = getIncidents(tenant_id, { status, category, limit });
+    return res.json({ incidents, total: incidents.length });
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+communityRouter.post("/community/incidents", requireOperator, async (req, res) => {
+  try {
+    const tenant_id = getTenantIdOrThrow(req);
+    const { title, category, severity, zone, lat, lng } = req.body as {
+      title?: string;
+      category?: string;
+      severity?: number;
+      zone?: string;
+      lat?: number;
+      lng?: number;
+    };
+
+    if (!title?.trim()) return res.status(400).json({ error: "title is required" });
+    if (!category?.trim()) return res.status(400).json({ error: "category is required" });
+
+    const incident = createIncident(tenant_id, {
+      title: title.trim(),
+      category,
+      severity,
+      zone,
+      lat,
+      lng,
+      created_by: "operator",
+    });
+
+    return res.status(201).json({ incident });
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+communityRouter.get("/community/incidents/:id", requireOperator, async (req, res) => {
+  try {
+    const tenant_id = getTenantIdOrThrow(req);
+    const incident = getIncidentById(tenant_id, req.params.id);
+
+    if (!incident) return res.status(404).json({ error: "Incident not found" });
+
+    const events = getIncidentEvents(incident.id);
+    const db = (await import("./db.js")).getDb();
+    const linkedReports = db.prepare(
+      "SELECT * FROM reports WHERE incident_id = ? AND tenant_id = ? ORDER BY created_at DESC"
+    ).all(incident.id, tenant_id);
+
+    return res.json({ incident, events, linked_reports: linkedReports });
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+communityRouter.patch("/community/incidents/:id/status", requireOperator, async (req, res) => {
+  try {
+    const tenant_id = getTenantIdOrThrow(req);
+    const { status, resolution_note } = req.body as {
+      status?: IncidentStatus;
+      resolution_note?: string;
+    };
+
+    const validStatuses: IncidentStatus[] = ["open", "in_progress", "resolved", "closed", "re_opened"];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({ error: `status must be one of: ${validStatuses.join(", ")}` });
+    }
+
+    const updated = updateIncidentStatus(tenant_id, req.params.id, status, {
+      resolution_note,
+      updated_by: "operator",
+    });
+
+    if (!updated) return res.status(404).json({ error: "Incident not found" });
+    return res.json({ incident: updated });
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+communityRouter.patch("/community/incidents/:id/assign", requireOperator, async (req, res) => {
+  try {
+    const tenant_id = getTenantIdOrThrow(req);
+    const { assigned_to } = req.body as { assigned_to?: string };
+
+    if (!assigned_to?.trim()) return res.status(400).json({ error: "assigned_to is required" });
+
+    const updated = assignIncident(tenant_id, req.params.id, assigned_to.trim(), "operator");
+    if (!updated) return res.status(404).json({ error: "Incident not found" });
+    return res.json({ incident: updated });
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+communityRouter.post("/community/incidents/:id/reports", requireOperator, async (req, res) => {
+  try {
+    const tenant_id = getTenantIdOrThrow(req);
+    const { report_id } = req.body as { report_id?: string };
+
+    if (!report_id?.trim()) return res.status(400).json({ error: "report_id is required" });
+
+    const ok = linkReportToIncident(tenant_id, report_id.trim(), req.params.id, "operator");
+    if (!ok) return res.status(404).json({ error: "Incident not found or report does not belong to this tenant" });
+
+    return res.json({ linked: true, report_id, incident_id: req.params.id });
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+communityRouter.delete("/community/incidents/:id/reports/:report_id", requireOperator, async (req, res) => {
+  try {
+    const tenant_id = getTenantIdOrThrow(req);
+    const ok = unlinkReportFromIncident(tenant_id, req.params.report_id, "operator");
+    if (!ok) return res.status(404).json({ error: "Report not linked to any incident" });
+
+    return res.json({ unlinked: true, report_id: req.params.report_id });
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// ── Suggestion review endpoints ────────────────────────────
+
+communityRouter.get("/community/reports/suggestions", requireOperator, async (req, res) => {
+  try {
+    const tenant_id = getTenantIdOrThrow(req);
+    const db = (await import("./db.js")).getDb();
+
+    const rows = db.prepare(`
+      SELECT r.*, r.incident_suggestion
+      FROM reports r
+      WHERE r.tenant_id = ?
+        AND r.incident_suggestion IS NOT NULL
+        AND r.incident_id IS NULL
+      ORDER BY r.created_at DESC
+    `).all(tenant_id) as Array<Record<string, unknown>>;
+
+    const suggestions = rows.map((r) => ({
+      report_id: r.id,
+      report_text: r.text,
+      report_category: r.category,
+      report_summary: r.summary,
+      suggestion: JSON.parse(r.incident_suggestion as string),
+    }));
+
+    return res.json({ suggestions, total: suggestions.length });
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+communityRouter.post("/community/reports/:id/suggestion/confirm", requireOperator, async (req, res) => {
+  try {
+    const tenant_id = getTenantIdOrThrow(req);
+    const db = (await import("./db.js")).getDb();
+
+    const row = db.prepare(
+      "SELECT incident_suggestion FROM reports WHERE id = ? AND tenant_id = ?"
+    ).get(req.params.id, tenant_id) as { incident_suggestion: string | null } | undefined;
+
+    if (!row?.incident_suggestion) {
+      return res.status(404).json({ error: "No pending suggestion for this report" });
+    }
+
+    const suggestion = JSON.parse(row.incident_suggestion) as { incident_id: string };
+
+    const ok = linkReportToIncident(tenant_id, req.params.id, suggestion.incident_id, "operator");
+    if (!ok) return res.status(404).json({ error: "Incident not found" });
+
+    // Clear suggestion after confirm
+    db.prepare(
+      "UPDATE reports SET incident_suggestion = NULL WHERE id = ? AND tenant_id = ?"
+    ).run(req.params.id, tenant_id);
+
+    return res.json({ confirmed: true, incident_id: suggestion.incident_id });
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+communityRouter.post("/community/reports/:id/suggestion/dismiss", requireOperator, async (req, res) => {
+  try {
+    const tenant_id = getTenantIdOrThrow(req);
+    const db = (await import("./db.js")).getDb();
+
+    const row = db.prepare(
+      "SELECT incident_suggestion FROM reports WHERE id = ? AND tenant_id = ?"
+    ).get(req.params.id, tenant_id) as { incident_suggestion: string | null } | undefined;
+
+    if (!row?.incident_suggestion) {
+      return res.status(404).json({ error: "No pending suggestion for this report" });
+    }
+
+    db.prepare(
+      "UPDATE reports SET incident_suggestion = NULL WHERE id = ? AND tenant_id = ?"
+    ).run(req.params.id, tenant_id);
+
+    return res.json({ dismissed: true });
   } catch (error) {
     return res.status(500).json({ error: (error as Error).message });
   }

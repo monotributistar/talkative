@@ -16,6 +16,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import { getPendingReportsForClassification, markReportsClassified, saveClassificationRun } from "./storeSqlite.js";
 import type { ClassificationItem } from "./storeSqlite.js";
+import { getDb } from "./db.js";
+import {
+  getOpenIncidentsByCategory,
+  linkReportToIncident,
+  AUTO_CREATE_THRESHOLD,
+  SUGGEST_THRESHOLD,
+} from "./incidentStore.js";
+import type { Incident, IncidentSuggestion } from "./incidentStore.js";
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -55,6 +63,20 @@ interface ClassifyResult {
   items: ClassificationItem[];
   durationMs: number;
   error?: string;
+  incidentMatches?: IncidentMatchItem[];
+}
+
+interface IncidentMatchItem {
+  report_id: string;
+  suggestion: IncidentSuggestion | null;   // null = no match found
+  action: "auto_linked" | "suggested" | "none";
+}
+
+interface LLMIncidentMatch {
+  report_id: string;
+  matched_incident_id: string | null;
+  confidence: number;
+  reasoning: string;
 }
 
 // ── Load categories config ─────────────────────────────────
@@ -123,6 +145,54 @@ async function callLLM(systemPrompt: string, userPrompt: string): Promise<string
 }
 
 // ── Prompts ────────────────────────────────────────────────
+
+function buildIncidentMatchSystemPrompt(): string {
+  return `You are an incident deduplication assistant for a residential neighborhood security system.
+
+Your job is to determine if a newly classified report describes the same real-world problem as one of the currently open incidents.
+
+Rules:
+- Only match if the report and incident clearly refer to the same physical event or ongoing problem.
+- Do NOT match just because the category is similar — the problem must be the same.
+- Consider location, description, and timing.
+- Output confidence 0.0 to 1.0. Use >= 0.80 only when very certain.
+- If no incident matches, output matched_incident_id as null with confidence 0.`;
+}
+
+function buildIncidentMatchUserPrompt(
+  reports: Array<{ id: string; text: string; category: string; location?: string }>,
+  openIncidents: Incident[]
+): string {
+  const incidentSummaries = openIncidents.map((inc) => ({
+    id: inc.id,
+    title: inc.title,
+    category: inc.category,
+    status: inc.status,
+    zone: inc.zone,
+    report_count: inc.report_count,
+    created_at: inc.created_at,
+  }));
+
+  return `Open incidents to compare against:
+${JSON.stringify(incidentSummaries, null, 2)}
+
+For each report below, decide if it matches one of the open incidents.
+Respond ONLY with valid JSON matching this schema:
+
+{
+  "matches": [
+    {
+      "report_id": "the report id",
+      "matched_incident_id": "incident id or null",
+      "confidence": 0.85,
+      "reasoning": "brief explanation"
+    }
+  ]
+}
+
+Reports to evaluate:
+${JSON.stringify(reports, null, 2)}`;
+}
 
 function buildSystemPrompt(): string {
   return `You are a community report classifier for a residential neighborhood security and management system.
@@ -317,12 +387,89 @@ export async function classifyPendingReports(
     }
   }
 
-  // 4. Write results back to SQLite
+  // 4. Write classification results back to SQLite
   if (allItems.length > 0) {
     markReportsClassified(tenant_id, allItems);
   }
 
-  // 5. Save classification run metrics
+  // 5. Incident matching — group classified items by category, then run one LLM call per category
+  const incidentMatches: IncidentMatchItem[] = [];
+
+  if (allItems.length > 0) {
+    // Group by category to minimise LLM calls
+    const byCategory = new Map<string, ClassificationItem[]>();
+    for (const item of allItems) {
+      const bucket = byCategory.get(item.category) ?? [];
+      bucket.push(item);
+      byCategory.set(item.category, bucket);
+    }
+
+    for (const [category, items] of byCategory) {
+      // Pre-filter: only fetch open incidents of this category
+      const openIncidents = getOpenIncidentsByCategory(tenant_id, category);
+
+      if (openIncidents.length === 0) {
+        // No open incidents for this category — mark all as none
+        for (const item of items) {
+          incidentMatches.push({ report_id: item.report_id, suggestion: null, action: "none" });
+        }
+        continue;
+      }
+
+      // Build LLM prompt with report summaries + open incidents
+      const reportSummaries = items.map((it) => ({
+        id: it.report_id,
+        text: pending.find((p) => p.id === it.report_id)?.text ?? "",
+        category: it.category,
+        location: it.location_normalized ?? undefined,
+      }));
+
+      const matchUserPrompt = buildIncidentMatchUserPrompt(reportSummaries, openIncidents);
+      const matchSystemPrompt = buildIncidentMatchSystemPrompt();
+
+      try {
+        const raw = await callLLM(matchSystemPrompt, matchUserPrompt);
+        llmCalls++;
+
+        let cleaned = raw.trim();
+        if (cleaned.startsWith("```")) {
+          cleaned = cleaned.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
+        }
+
+        const parsed = JSON.parse(cleaned) as { matches: LLMIncidentMatch[] };
+
+        for (const match of parsed.matches) {
+          if (!match.matched_incident_id || match.confidence < SUGGEST_THRESHOLD) {
+            incidentMatches.push({ report_id: match.report_id, suggestion: null, action: "none" });
+            continue;
+          }
+
+          const suggestion: IncidentSuggestion = {
+            incident_id: match.matched_incident_id,
+            confidence: match.confidence,
+            reasoning: match.reasoning,
+          };
+
+          if (match.confidence >= AUTO_CREATE_THRESHOLD) {
+            // High confidence — auto-link
+            linkReportToIncident(tenant_id, match.report_id, match.matched_incident_id, "system");
+            incidentMatches.push({ report_id: match.report_id, suggestion, action: "auto_linked" });
+          } else {
+            // Medium confidence — store suggestion for operator review
+            storeSuggestion(tenant_id, match.report_id, suggestion);
+            incidentMatches.push({ report_id: match.report_id, suggestion, action: "suggested" });
+          }
+        }
+      } catch (err) {
+        console.error("[classifyService] Incident match batch failed:", (err as Error).message);
+        for (const item of items) {
+          incidentMatches.push({ report_id: item.report_id, suggestion: null, action: "none" });
+        }
+      }
+    }
+  }
+
+  // 6. Save classification run metrics
   const durationMs = Date.now() - startMs;
   saveClassificationRun(tenant_id, {
     reportCount: pending.length,
@@ -337,5 +484,24 @@ export async function classifyPendingReports(
     failed: failedCount,
     items: allItems,
     durationMs,
+    incidentMatches,
   };
+}
+
+// ── Suggestion persistence ─────────────────────────────────────────────────────
+// Suggestions pending operator review are stored in a lightweight JSON column
+// on the report row itself to avoid adding another table at this stage.
+
+function storeSuggestion(
+  tenant_id: string,
+  report_id: string,
+  suggestion: IncidentSuggestion
+): void {
+  try {
+    getDb().prepare(
+      "UPDATE reports SET incident_suggestion = ? WHERE id = ? AND tenant_id = ?"
+    ).run(JSON.stringify(suggestion), report_id, tenant_id);
+  } catch (err) {
+    console.error("[classifyService] storeSuggestion failed:", (err as Error).message);
+  }
 }
