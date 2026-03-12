@@ -103,11 +103,24 @@ communityRouter.post("/community/reports", requireCommunityCode, async (req, res
       location,
     });
 
-    return res.status(201).json({
+    res.status(201).json({
       accepted: true,
       report_id: report.id,
       message: "Reporte recibido. Gracias por ayudar a mantener seguro el barrio.",
     });
+
+    // Auto-classify in background (fire-and-forget, does not block response)
+    if (process.env.AUTO_CLASSIFY !== "false") {
+      setImmediate(async () => {
+        try {
+          await classifyPendingReports(tenant_id);
+        } catch (err) {
+          console.error("[auto-classify] background classification failed:", (err as Error).message);
+        }
+      });
+    }
+
+    return;
   } catch (error) {
     return res.status(500).json({ error: (error as Error).message });
   }
