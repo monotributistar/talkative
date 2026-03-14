@@ -81,7 +81,6 @@ async function getLatestRunIdForAgent(tenant_id: string, agent_id: string): Prom
   const latest = runs.sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0];
   return latest?.run_id ?? null;
 }
-
 // ── Core ───────────────────────────────────────────────────
 
 /**

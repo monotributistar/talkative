@@ -1,37 +1,74 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MissionControl from "./MissionControl";
 import RouterAdmin from "./RouterAdmin";
 import WorkflowEditor from "./WorkflowEditor";
+import CommunityDashboard from "./CommunityDashboard";
+import StatsDashboard from "./dashboard/StatsDashboard";
 
-function resolveInitialView(): "workflow" | "mission" | "router-admin" {
+type View = "mission" | "workflow" | "router-admin" | "dashboard" | "stats";
+
+function resolveInitialView(): View {
   const pathname = window.location.pathname;
   if (pathname === "/router-admin") return "router-admin";
   if (pathname === "/workflow") return "workflow";
+
+  if (pathname === "/dashboard") return "dashboard";
+  if (pathname === "/stats") return "stats";
   return "mission";
 }
 
 export default function App() {
-  const [view, setView] = useState<"workflow" | "mission" | "router-admin">(resolveInitialView);
+  const [view, setView] = useState<View>(resolveInitialView);
+  const [dark, setDark] = useState(() => {
+    return document.documentElement.getAttribute("data-theme") === "dark";
+  });
 
-  function setViewWithPath(next: "workflow" | "mission" | "router-admin") {
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  }, [dark]);
+
+  function setViewWithPath(next: View) {
     setView(next);
-    const path = next === "router-admin" ? "/router-admin" : next === "workflow" ? "/workflow" : "/";
-    window.history.replaceState({}, "", path);
+    const pathMap: Record<View, string> = {
+      mission: "/",
+      workflow: "/workflow",
+      "router-admin": "/router-admin",
+      dashboard: "/dashboard",
+      stats: "/stats",
+    };
+    window.history.replaceState({}, "", pathMap[next]);
   }
 
   return (
     <div className="app-shell">
       <header className="header-row">
-        <h1>Conversational Workflow Agent POC</h1>
+        <h1>
+          {view === "dashboard"
+            ? "📊 Panel de Seguridad"
+            : "Conversational Workflow Agent POC"}
+        </h1>
         <div className="nav-tabs">
+          <button
+            className="theme-toggle"
+            onClick={() => setDark((d) => !d)}
+            title={dark ? "Modo claro" : "Modo nocturno"}
+          >
+            {dark ? "☀️" : "🌙"}
+          </button>
           <button className={view === "mission" ? "tab active" : "tab"} onClick={() => setViewWithPath("mission")}>
             Mission Control
           </button>
           <button className={view === "workflow" ? "tab active" : "tab"} onClick={() => setViewWithPath("workflow")}>
-            Workflow Editor
+            Workflow
           </button>
           <button className={view === "router-admin" ? "tab active" : "tab"} onClick={() => setViewWithPath("router-admin")}>
-            Router Admin
+            Router
+          </button>
+          <button className={view === "dashboard" ? "tab active tab-community" : "tab tab-community"} onClick={() => setViewWithPath("dashboard")}>
+            📊 Dashboard
+          </button>
+          <button className={view === "stats" ? "tab active tab-community" : "tab tab-community"} onClick={() => setViewWithPath("stats")}>
+            📈 Estadísticas
           </button>
         </div>
       </header>
@@ -39,6 +76,8 @@ export default function App() {
       {view === "mission" && <MissionControl />}
       {view === "workflow" && <WorkflowEditor />}
       {view === "router-admin" && <RouterAdmin />}
+      {view === "dashboard" && <CommunityDashboard />}
+      {view === "stats" && <StatsDashboard />}
     </div>
   );
 }

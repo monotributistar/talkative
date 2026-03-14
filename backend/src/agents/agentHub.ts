@@ -58,6 +58,13 @@ export class AgentHub {
     return agent;
   }
 
+  /** Find first agent by template name within a tenant. */
+  findByTemplate(template: string, tenant_id: string): AgentRecord | undefined {
+    return this.listAgents({ tenant_id }).find(
+      (a) => a.template === template
+    );
+  }
+
   private getRunnerOrThrow(id: string, tenant_id?: string): AgentRunner {
     const runner = this.runners.get(id);
     if (!runner) throw new Error("Agent not found");
@@ -70,7 +77,7 @@ export class AgentHub {
     tenant_id?: string;
     name: string;
     workspace?: string;
-    template?: "mail-triage" | "git-watcher" | "monthly-bookkeeping";
+    template?: "mail-triage" | "git-watcher" | "monthly-bookkeeping" | "community-classifier";
   }): Promise<AgentRecord> {
     const id = input.id?.trim() || nanoid(8);
     if (this.getAgent(id)) {
@@ -91,6 +98,7 @@ export class AgentHub {
       workspace,
       status: "stopped",
       heartbeatMinutes: 30,
+      template: input.template,
       createdAt,
       updatedAt: createdAt
     };
@@ -147,6 +155,53 @@ export class AgentHub {
       ["# Heartbeat Tasks", "", "RUN node skills/git-watcher/scripts/gitStatusReport.ts --repo . --output outputs/git-status.json"].join(
         "\n"
       ),
+      "utf8"
+    );
+  }
+
+  private async seedCommunityClassifierWorkspace(workspace: string): Promise<void> {
+    await fs.mkdir(path.join(workspace, "inputs"), { recursive: true });
+    await fs.mkdir(path.join(workspace, "outputs"), { recursive: true });
+
+    const heartbeatPath = path.join(workspace, "HEARTBEAT.md");
+    await fs.writeFile(
+      heartbeatPath,
+      [
+        "# Heartbeat Tasks",
+        "",
+        "RUN node skills/community-classifier/scripts/classifyReports.ts --input inputs/pending-reports.json --output outputs/classification-report.json"
+      ].join("\n"),
+      "utf8"
+    );
+
+    // Seed sample reports for testing
+    const sampleReports = [
+      {
+        id: "report-sample-001",
+        resident_id: "vec-anon-001",
+        text: "Hay un auto sospechoso estacionado en la esquina hace horas con alguien adentro",
+        timestamp: new Date().toISOString(),
+        location: { address_hint: "Cerezo y Divisadero" }
+      },
+      {
+        id: "report-sample-002",
+        resident_id: "vec-anon-002",
+        text: "Se siente olor a quemado fuerte del lado del bosque",
+        timestamp: new Date().toISOString(),
+        location: { address_hint: "Acceso Ruta 11" }
+      },
+      {
+        id: "report-sample-003",
+        resident_id: "vec-anon-003",
+        text: "Hay un pozo enorme en la calle, ya me pinché una rueda",
+        timestamp: new Date().toISOString(),
+        location: { address_hint: "Junco casi Casuarina" }
+      }
+    ];
+
+    await fs.writeFile(
+      path.join(workspace, "inputs", "pending-reports.json"),
+      JSON.stringify(sampleReports, null, 2),
       "utf8"
     );
   }
@@ -217,6 +272,9 @@ export class AgentHub {
     if (input.skillName === "monthly-bookkeeping") {
       await this.seedMonthlyBookkeepingWorkspace(agent.workspace);
     }
+    if (input.skillName === "community-classifier") {
+      await this.seedCommunityClassifierWorkspace(agent.workspace);
+    }
 
     await appendAgentEvent({
       agentId: id,
@@ -264,6 +322,7 @@ export class AgentHub {
       { keywords: ["mail", "email", "inbox", "triage"], agentMatch: "mail" },
       { keywords: ["git", "repo", "commit", "branch"], agentMatch: "git" },
       { keywords: ["bookkeeping", "accounting", "transaction", "invoice"], agentMatch: "book" },
+      { keywords: ["classify", "report", "reporte", "clasificar", "vecino", "denuncia", "reclamo", "incidente", "seguridad", "community"], agentMatch: "community" },
     ];
 
     for (const rule of keywordMap) {

@@ -1,0 +1,75 @@
+[
+  {
+    "id": "report-001",
+    "resident_id": "vec-anon-042",
+    "text": "Hola, anoche tipo 3am había un auto gris estacionado en la esquina de Cerezo y Divisadero con las luces apagadas y había alguien adentro, estuvo como 2 horas. Nunca lo vi por el barrio.",
+    "timestamp": "2026-02-28T06:15:00-03:00",
+    "location": {
+      "lat": -37.168,
+      "lng": -56.899,
+      "address_hint": "Cerezo y Divisadero"
+    }
+  },
+  {
+    "id": "report-002",
+    "resident_id": "vec-anon-015",
+    "text": "Hay olor a quemado fuerte viniendo del lado del bosque, cerca del acceso por ruta 11. No se ve fuego pero el humo es bastante.",
+    "timestamp": "2026-02-28T14:30:00-03:00",
+    "location": {
+      "lat": -37.171,
+      "lng": -56.905,
+      "address_hint": "Cerca del acceso ruta 11"
+    }
+  },
+  {
+    "id": "report-003",
+    "resident_id": "vec-anon-078",
+    "text": "Mi vecino de al lado está haciendo una construcción que parece un segundo piso, empezaron hace una semana y no vi ningún cartel de obra ni nada. Saben si eso está permitido en la zona?",
+    "timestamp": "2026-02-27T10:00:00-03:00",
+    "location": {
+      "address_hint": "Calle Boyero entre Cerezo y Castaño"
+    }
+  },
+  {
+    "id": "report-004",
+    "resident_id": "vec-anon-033",
+    "text": "Hay un pozo enorme en la calle Junco casi llegando a Casuarina, ya pinché una rueda la semana pasada. Es un peligro, de noche no se ve nada porque tampoco hay luz en esa cuadra.",
+    "timestamp": "2026-02-26T18:45:00-03:00",
+    "location": {
+      "address_hint": "Junco casi Casuarina"
+    }
+  },
+  {
+    "id": "report-005",
+    "resident_id": "vec-anon-091",
+    "text": "Ayer entraron a la casa de los García en calle Avutarda, se llevaron herramientas del jardín y una bicicleta. La policía ya vino pero quería avisar por acá también para que todos estén atentos.",
+    "timestamp": "2026-02-28T08:00:00-03:00",
+    "location": {
+      "address_hint": "Calle Avutarda"
+    }
+  },
+  {
+    "id": "report-006",
+    "resident_id": "vec-anon-055",
+    "text": "Los de la casa de la esquina de Carpintero y Calandria tienen música a todo volumen todos los fines de semana hasta las 5am, imposible dormir. Ya les pedimos que bajen y ni bola.",
+    "timestamp": "2026-02-28T02:30:00-03:00",
+    "location": {
+      "address_hint": "Carpintero y Calandria"
+    }
+  },
+  {
+    "id": "report-007",
+    "resident_id": "vec-anon-012",
+    "text": "Quería consultar si la ordenanza de forestación sigue vigente, porque quiero podar un pino que está inclinado sobre mi techo y me dijeron que no se puede tocar sin permiso.",
+    "timestamp": "2026-02-27T11:20:00-03:00"
+  },
+  {
+    "id": "report-008",
+    "resident_id": "vec-anon-067",
+    "text": "Hay un perro suelto grande, tipo ovejero, que anda por la zona de Pheasant hace varios días. No tiene collar y se pone agresivo cuando pasan chicos. Alguien sabe de quién es?",
+    "timestamp": "2026-02-28T16:00:00-03:00",
+    "location": {
+      "address_hint": "Zona de calle Pheasant"
+    }
+  }
+]

@@ -1,0 +1,87 @@
+{
+  "version": "1.0.0",
+  "categories": [
+    {
+      "id": "seguridad",
+      "label": "Seguridad",
+      "description": "Robos, intentos de robo, personas sospechosas, vandalismo, ruidos nocturnos sospechosos",
+      "subcategories": ["robo", "intento_robo", "persona_sospechosa", "vandalismo", "ruido_sospechoso", "vehiculo_sospechoso", "otro"],
+      "route_to": "empresa_seguridad",
+      "urgency_boost": 1,
+      "keywords_hint": ["robo", "robaron", "sospechoso", "alarma", "intruso", "vandalo", "rompieron", "forzaron", "merodeando"]
+    },
+    {
+      "id": "bomberos",
+      "label": "Bomberos / Incendios",
+      "description": "Incendios forestales, quema no autorizada, humo, riesgo de incendio, emergencias",
+      "subcategories": ["incendio_forestal", "quema", "humo", "riesgo_incendio", "emergencia", "otro"],
+      "route_to": "bomberos",
+      "urgency_boost": 2,
+      "keywords_hint": ["fuego", "incendio", "humo", "quemando", "llamas", "fogata", "pasto seco", "chispas"]
+    },
+    {
+      "id": "municipal",
+      "label": "Municipalidad",
+      "description": "Trámites, consultas sobre ordenanzas, regulaciones, permisos, reclamos administrativos generales",
+      "subcategories": ["consulta_ordenanza", "tramite", "reclamo_general", "permiso", "otro"],
+      "route_to": "municipalidad",
+      "urgency_boost": 0,
+      "keywords_hint": ["ordenanza", "municipio", "permiso", "habilitación", "trámite", "regulación"]
+    },
+    {
+      "id": "fiscalizacion",
+      "label": "Fiscalización",
+      "description": "Construcciones irregulares, violaciones de código, actividad comercial no habilitada, uso indebido del espacio",
+      "subcategories": ["construccion_irregular", "violacion_codigo", "comercio_no_habilitado", "uso_indebido_espacio", "otro"],
+      "route_to": "fiscalizacion_municipal",
+      "urgency_boost": 0,
+      "keywords_hint": ["construyendo", "obra", "sin permiso", "irregular", "negocio", "habilitación", "altura", "tala", "poda"]
+    },
+    {
+      "id": "vialidad",
+      "label": "Vialidad / Infraestructura",
+      "description": "Baches, calles en mal estado, alumbrado, señalización, árboles caídos, inundaciones",
+      "subcategories": ["bache", "calle_mal_estado", "alumbrado", "senalizacion", "arbol_caido", "inundacion", "otro"],
+      "route_to": "vialidad",
+      "urgency_boost": 0,
+      "keywords_hint": ["bache", "pozo", "calle rota", "luz", "farol", "señal", "árbol caído", "inundado", "agua"]
+    },
+    {
+      "id": "convivencia",
+      "label": "Convivencia Vecinal",
+      "description": "Ruidos molestos, mascotas sueltas, basura, olores, conflictos entre vecinos",
+      "subcategories": ["ruido_molesto", "mascota_suelta", "basura", "olor", "conflicto_vecinal", "otro"],
+      "route_to": "administracion_barrio",
+      "urgency_boost": 0,
+      "keywords_hint": ["ruido", "música", "perro", "basura", "olor", "vecino", "molesta"]
+    }
+  ],
+  "default_category": "municipal",
+  "confidence_threshold": 0.6,
+  "routing": {
+    "empresa_seguridad": {
+      "label": "Empresa de Seguridad Privada",
+      "notify": true
+    },
+    "bomberos": {
+      "label": "Bomberos Voluntarios",
+      "notify": true
+    },
+    "municipalidad": {
+      "label": "Municipalidad",
+      "notify": false
+    },
+    "fiscalizacion_municipal": {
+      "label": "Fiscalización Municipal",
+      "notify": false
+    },
+    "vialidad": {
+      "label": "Vialidad / Obras Públicas",
+      "notify": false
+    },
+    "administracion_barrio": {
+      "label": "Administración del Barrio",
+      "notify": false
+    }
+  }
+}

@@ -19,7 +19,6 @@ function isTaskPlan(input: unknown): input is TaskPlan {
     Array.isArray(plan.subtasks)
   );
 }
-
 // ── Plan ───────────────────────────────────────────────────
 
 /**
