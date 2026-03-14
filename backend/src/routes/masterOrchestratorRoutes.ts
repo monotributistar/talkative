@@ -3,11 +3,22 @@ import { getTenantIdOrThrow } from "../tenancy/guard.js";
 import { agentHub } from "../agents/agentHub.js";
 import { createPlan } from "../master-orchestrator/planner.js";
 import { executePlan } from "../master-orchestrator/supervisor.js";
+import type { TaskPlan } from "../master-orchestrator/types.js";
 import { checkAgentHealth, getSystemOverview } from "../master-orchestrator/healthMonitor.js";
 import { getRun } from "../orchestrator/store.js";
 
 export const masterOrchestratorRouter = Router();
 
+function isTaskPlan(input: unknown): input is TaskPlan {
+  if (!input || typeof input !== "object") return false;
+  const plan = input as Partial<TaskPlan>;
+  return (
+    typeof plan.plan_id === "string" &&
+    typeof plan.tenant_id === "string" &&
+    typeof plan.original_request === "string" &&
+    Array.isArray(plan.subtasks)
+  );
+}
 // ── Plan ───────────────────────────────────────────────────
 
 /**
@@ -57,14 +68,26 @@ masterOrchestratorRouter.post("/orchestrator/plan", async (req, res) => {
  */
 masterOrchestratorRouter.post("/orchestrator/plan/:plan_id/execute", async (req, res) => {
   try {
+    const tenant_id = getTenantIdOrThrow(req);
     const { plan } = req.body as { plan?: unknown };
 
     if (!plan) {
       return res.status(400).json({ error: "plan is required in body (plan persistence not yet implemented)" });
     }
 
-    // TODO: validate plan shape
-    const result = await executePlan(plan as any);
+    if (!isTaskPlan(plan)) {
+      return res.status(400).json({ error: "Invalid plan payload" });
+    }
+
+    if (plan.plan_id !== req.params.plan_id) {
+      return res.status(400).json({ error: "plan_id path param does not match body plan.plan_id" });
+    }
+
+    if (plan.tenant_id !== tenant_id) {
+      return res.status(403).json({ error: "Plan tenant does not match authenticated tenant" });
+    }
+
+    const result = await executePlan(plan);
     return res.json(result);
   } catch (error) {
     return res.status(500).json({ error: (error as Error).message });
