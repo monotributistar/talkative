@@ -1,5 +1,20 @@
 import { InterpreterResult } from "../domain/types.js";
 
+/**
+ * Deterministic text-to-workflow interpreter.
+ *
+ * Splits natural language into sequential tasks using separator tokens.
+ * This is a lightweight, zero-cost parser for the Workflow Editor — it
+ * generates workflow nodes/edges from simple user descriptions.
+ *
+ * NOTE: This is NOT the same as the Master Orchestrator's Planner.
+ * The Planner uses LLM-driven decomposition to break complex requests
+ * into subtasks delegated across multiple agents. This interpreter
+ * operates on a single agent's workflow graph.
+ *
+ * See: docs/design-master-orchestrator.md §3.1 for the Planner design.
+ */
+
 const SEPARATORS = /\s*(?:->|→|>|,|;|\.|\bthen\b|\by luego\b|\bluego\b|\band\b|\by\b)\s*/gi;
 
 function normalizeTask(raw: string): string {

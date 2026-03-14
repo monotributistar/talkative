@@ -1,11 +1,21 @@
-export type OrchestratorCommandType = "start_task" | "pause" | "resume" | "cancel" | "request_delegate";
+export type OrchestratorCommandType =
+  | "start_task" | "pause" | "resume" | "cancel" | "request_delegate"
+  | "delegate_subtask" | "evaluate_result";
 
 export type OrchestratorEventType =
   | "state_changed"
   | "tool_started"
   | "tool_finished"
   | "metric_recorded"
-  | "error_compacted";
+  | "error_compacted"
+  // Master Orchestrator events
+  | "plan_created"
+  | "subtask_delegated"
+  | "subtask_completed"
+  | "subtask_failed"
+  | "subtask_skipped"
+  | "workflow_evaluated"
+  | "health_check";
 
 export type RunStatus = "pending" | "running" | "paused" | "cancelled" | "failed" | "completed";
 

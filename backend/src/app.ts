@@ -12,6 +12,7 @@ import { fleetRouter } from "./routes/fleetRoutes.js";
 import { captureHttpMetrics } from "./observability/httpMetrics.js";
 import { metricsRouter } from "./routes/metricsRoutes.js";
 import { orchestratorRouter } from "./routes/orchestratorRoutes.js";
+import { masterOrchestratorRouter } from "./routes/masterOrchestratorRoutes.js";
 import { enforceTenantContext } from "./tenancy/guard.js";
 import { promptRouter } from "./routes/promptRoutes.js";
 import { routerAdminRouter } from "./routes/routerAdminRoutes.js";
@@ -48,6 +49,7 @@ export async function createApp() {
   app.use(routerAdminRouter);
   app.use(fleetRouter);
   app.use(orchestratorRouter);
+  app.use(masterOrchestratorRouter);
   app.use(webhookRouter);
 
   app.get("/events", (_req, res) => {

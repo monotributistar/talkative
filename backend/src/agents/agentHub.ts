@@ -243,34 +243,59 @@ export class AgentHub {
     return runner.handleMessage(message);
   }
 
-  classifyAgent(message: string, tenant_id?: string): AgentRecord | null {
+  /**
+   * Quick keyword-based agent classifier.
+   * Used for simple, single-agent requests.
+   *
+   * For complex multi-agent requests, the Master Orchestrator's
+   * Planner should be used instead (LLM-driven decomposition).
+   *
+   * Returns { agent, confidence } so callers can decide whether
+   * to use this result or escalate to the Planner.
+   */
+  classifyAgent(message: string, tenant_id?: string): { agent: AgentRecord | null; confidence: "high" | "low" } {
     const lower = message.toLowerCase();
     const scoped = this.registry.list().filter((agent) => (tenant_id ? agent.tenant_id === tenant_id : true));
 
-    if (lower.includes("mail") || lower.includes("email") || lower.includes("inbox")) {
-      return scoped.find((agent) => agent.name.toLowerCase().includes("mail")) ?? scoped[0] ?? null;
+    if (scoped.length === 0) return { agent: null, confidence: "low" };
+
+    // Keyword → agent name mapping
+    const keywordMap: Array<{ keywords: string[]; agentMatch: string }> = [
+      { keywords: ["mail", "email", "inbox", "triage"], agentMatch: "mail" },
+      { keywords: ["git", "repo", "commit", "branch"], agentMatch: "git" },
+      { keywords: ["bookkeeping", "accounting", "transaction", "invoice"], agentMatch: "book" },
+    ];
+
+    for (const rule of keywordMap) {
+      if (rule.keywords.some((kw) => lower.includes(kw))) {
+        const matched = scoped.find((a) => a.name.toLowerCase().includes(rule.agentMatch));
+        if (matched) return { agent: matched, confidence: "high" };
+      }
     }
 
-    if (lower.includes("git") || lower.includes("repo")) {
-      return scoped.find((agent) => agent.name.toLowerCase().includes("git")) ?? scoped[0] ?? null;
-    }
-
-    return scoped[0] ?? null;
+    // No keyword match → fallback with low confidence
+    return { agent: scoped[0], confidence: "low" };
   }
 
   async routeMessage(
     message: string,
     preferredAgentId?: string,
     tenant_id?: string
-  ): Promise<{ agentId: string; response: AgentMessageResponse }> {
+  ): Promise<{ agentId: string; response: AgentMessageResponse; confidence: "high" | "low" }> {
     const preferred = preferredAgentId ? this.getAgent(preferredAgentId, tenant_id) ?? null : null;
-    const selected = preferred ?? this.classifyAgent(message, tenant_id);
-    if (!selected) {
+
+    if (preferred) {
+      const response = await this.sendMessage(preferred.id, message, tenant_id);
+      return { agentId: preferred.id, response, confidence: "high" };
+    }
+
+    const { agent, confidence } = this.classifyAgent(message, tenant_id);
+    if (!agent) {
       throw new Error("No agents available to route this message");
     }
 
-    const response = await this.sendMessage(selected.id, message, tenant_id);
-    return { agentId: selected.id, response };
+    const response = await this.sendMessage(agent.id, message, tenant_id);
+    return { agentId: agent.id, response, confidence };
   }
 }
 
