@@ -1,11 +1,16 @@
 // Quick test: verify Gemini API key works with the OpenAI-compatible endpoint
 // Run: node --import tsx src/scripts/testLLM.ts
 
-const API_KEY = process.env.LLM_API_KEY || "AIzaSyAq93dmebC0AylXUpxHfYaHsxOUmJsqjAs";
+const API_KEY = process.env.LLM_API_KEY;
 const BASE_URL = process.env.LLM_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai";
 const MODEL = process.env.LLM_MODEL || "gemini-2.5-flash";
 
 async function main() {
+  if (!API_KEY) {
+    console.error("❌ LLM_API_KEY is required. Set it in your environment before running this script.");
+    process.exit(1);
+  }
+
   console.log(`Testing LLM connection...`);
   console.log(`  URL: ${BASE_URL}/chat/completions`);
   console.log(`  Model: ${MODEL}`);

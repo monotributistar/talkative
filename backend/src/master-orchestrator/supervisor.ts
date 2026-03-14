@@ -8,7 +8,7 @@
 
 import { nanoid } from "nanoid";
 import { agentHub } from "../agents/agentHub.js";
-import { appendCommand, appendEvent } from "../orchestrator/store.js";
+import { appendCommand, appendEvent, listRuns } from "../orchestrator/store.js";
 import {
   TaskPlan,
   SubTask,
@@ -73,6 +73,13 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
         reject(err);
       });
   });
+}
+
+async function getLatestRunIdForAgent(tenant_id: string, agent_id: string): Promise<string | null> {
+  const runs = await listRuns({ tenant_id, agent_id, limit: 20 });
+  if (runs.length === 0) return null;
+  const latest = runs.sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0];
+  return latest?.run_id ?? null;
 }
 
 // ── Core ───────────────────────────────────────────────────
@@ -166,7 +173,10 @@ export async function executePlan(
       subtask.duration_ms = Date.now() - new Date(subtask.delegated_at).getTime();
       subtask.result = response.reply;
 
-      child_run_ids.push(response.agentId);
+      const childRunId = await getLatestRunIdForAgent(plan.tenant_id, subtask.target_agent_id);
+      if (childRunId) {
+        child_run_ids.push(childRunId);
+      }
 
       await appendEvent({
         tenant_id: plan.tenant_id,
