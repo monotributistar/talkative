@@ -14,8 +14,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import "./stats.css";
 import { useStatsData } from "./useStatsData.js";
 import { downloadExport } from "./statsApi.js";
-import type { DateRange, KPISummary, CategoriesResponse, HotspotsResponse, ByHourResponse, ReportGeo } from "./statsTypes.js";
-
+import type { DateRange, KPISummary, TimelineResponse, CategoriesResponse, HotspotsResponse, RoutingResponse, ByHourResponse, ReportGeo } from "./statsTypes.js";
 // ── Constants ──────────────────────────────────────────────
 
 const CATEGORIES: Record<string, { color: string; bg: string; emoji: string; label: string }> = {
@@ -86,11 +85,13 @@ function StatsMap({ reports }: { reports: ReportGeo[] }) {
 
     if (reports.length === 0) return;
 
-    // Heatmap config — added after fitBounds completes to avoid canvas height=0 crash
+   // Heatmap config — added after fitBounds completes to avoid canvas height=0 crash
     const heatData = reports.map(r => [r.lat, r.lng, r.urgency / 5]);
     const addHeat = () => {
       try {
         if (!mapInst.current || heatLayer.current) return;
+        const container = mapInst.current.getContainer();
+        if (!container || container.clientHeight < 10) return;
         const hl = (L as any).heatLayer(heatData, {
           radius: 18, blur: 15, maxZoom: 17, max: 1.0, minOpacity: 0.0,
           gradient: {
@@ -155,15 +156,14 @@ function StatsMap({ reports }: { reports: ReportGeo[] }) {
     markersLayer.current = cluster;
 
     // Fit bounds, then add heatmap once map has settled
-    if (reports.length > 1) {
+if (reports.length > 1) {
       const bounds = L.latLngBounds(reports.map(r => [r.lat, r.lng] as [number, number]));
-      map.once('moveend', () => setTimeout(addHeat, 100));
-      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 });
+      map.once('moveend', () => requestAnimationFrame(() => setTimeout(addHeat, 200)));
+      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16, animate: false });
     } else {
       setTimeout(addHeat, 300);
     }
   }, [reports]);
-
   return (
     <div className="stats-map-container">
       <div ref={mapRef} className="stats-map" />
@@ -417,6 +417,231 @@ function NarrativeLine({ summary, hotspots, categories }: {
 
 // ── Main Component ─────────────────────────────────────────
 
+// ============================================================
+// COMPONENT: TimelineChart
+// INSERT BEFORE: export default function StatsDashboard()
+// ============================================================
+
+function TimelineChart({ timeline }: { timeline: TimelineResponse | null }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(600);
+  const HEIGHT = 160;
+  const PAD = { top: 16, right: 12, bottom: 28, left: 36 };
+
+  // Observe container width for responsive SVG
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width;
+      if (w && w > 0) setWidth(Math.floor(w));
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  if (!timeline || timeline.points.length === 0) {
+    return (
+      <div ref={containerRef} className="stats-timeline-empty">
+        Sin datos de línea temporal
+      </div>
+    );
+  }
+
+  const pts = timeline.points;
+  const chartW = width - PAD.left - PAD.right;
+  const chartH = HEIGHT - PAD.top - PAD.bottom;
+
+  const maxTotal = Math.max(1, ...pts.map((p) => p.total));
+  const xStep = pts.length > 1 ? chartW / (pts.length - 1) : chartW;
+
+  // Build path data
+  const linePoints = pts.map((p, i) => {
+    const x = PAD.left + i * xStep;
+    const y = PAD.top + chartH - (p.total / maxTotal) * chartH;
+    return { x, y, ...p };
+  });
+
+  const linePath = linePoints.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
+  const areaPath = `${linePath} L${linePoints[linePoints.length - 1].x},${PAD.top + chartH} L${linePoints[0].x},${PAD.top + chartH} Z`;
+
+  // Pending area (stacked below total)
+  const pendingPoints = pts.map((p, i) => {
+    const x = PAD.left + i * xStep;
+    const y = PAD.top + chartH - (p.pending / maxTotal) * chartH;
+    return { x, y };
+  });
+  const pendingPath =
+    pendingPoints.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ") +
+    ` L${pendingPoints[pendingPoints.length - 1].x},${PAD.top + chartH} L${pendingPoints[0].x},${PAD.top + chartH} Z`;
+
+  // Y-axis ticks (4 ticks)
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((pct) => ({
+    value: Math.round(maxTotal * pct),
+    y: PAD.top + chartH - pct * chartH,
+  }));
+
+  // X-axis labels (show ~5-7 labels max)
+  const labelEvery = Math.max(1, Math.floor(pts.length / 6));
+  const xLabels = linePoints.filter((_, i) => i % labelEvery === 0 || i === pts.length - 1);
+
+  // Delta badge
+  const delta = timeline.delta_pct;
+  const deltaDir = delta !== null && delta !== 0 ? (delta > 0 ? "up" : "down") : null;
+
+  return (
+    <div ref={containerRef} className="stats-timeline-wrap">
+      <div className="stats-timeline-header">
+        <span className="stats-card-title">LÍNEA TEMPORAL</span>
+        {delta !== null && (
+          <span className={`stats-kpi-delta ${deltaDir}`}>
+            {deltaDir === "up" ? "↑" : deltaDir === "down" ? "↓" : ""}
+            {Math.abs(delta).toFixed(0)}% vs período anterior
+          </span>
+        )}
+      </div>
+      <svg
+        viewBox={`0 0 ${width} ${HEIGHT}`}
+        width={width}
+        height={HEIGHT}
+        className="stats-timeline-svg"
+      >
+        <defs>
+          <linearGradient id="tl-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--stats-accent)" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="var(--stats-accent)" stopOpacity="0.02" />
+          </linearGradient>
+          <linearGradient id="tl-pending-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--stats-warning)" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="var(--stats-warning)" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+
+        {/* Grid lines */}
+        {yTicks.map((t) => (
+          <g key={t.value}>
+            <line
+              x1={PAD.left}
+              y1={t.y}
+              x2={width - PAD.right}
+              y2={t.y}
+              stroke="var(--stats-border)"
+              strokeDasharray="3,3"
+            />
+            <text
+              x={PAD.left - 6}
+              y={t.y + 3}
+              textAnchor="end"
+              fill="var(--stats-muted)"
+              fontSize="8"
+              fontFamily="var(--stats-mono)"
+            >
+              {t.value}
+            </text>
+          </g>
+        ))}
+
+        {/* Areas */}
+        <path d={areaPath} fill="url(#tl-grad)" />
+        <path d={pendingPath} fill="url(#tl-pending-grad)" />
+
+        {/* Lines */}
+        <path d={linePath} fill="none" stroke="var(--stats-accent)" strokeWidth="2" strokeLinejoin="round" />
+
+        {/* Dots */}
+        {linePoints.map((p, i) => {
+          const urgCol =
+            (p.avg_urgency ?? 0) >= 3.5 ? "var(--stats-danger)" : (p.avg_urgency ?? 0) >= 2.5 ? "var(--stats-warning)" : "var(--stats-accent)";
+          return (
+            <g key={i}>
+              <circle cx={p.x} cy={p.y} r="3.5" fill="var(--stats-bg)" stroke={urgCol} strokeWidth="1.5" />
+              {/* Tooltip hitbox */}
+              <title>
+                {new Date(p.date).toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
+                {`: ${p.total} reportes (${p.pending} pend.) · urg ${(p.avg_urgency ?? 0).toFixed(1)}`}
+              </title>
+            </g>
+          );
+        })}
+
+        {/* X labels */}
+        {xLabels.map((p) => (
+          <text
+            key={p.date}
+            x={p.x}
+            y={HEIGHT - 6}
+            textAnchor="middle"
+            fill="var(--stats-muted)"
+            fontSize="8"
+            fontFamily="var(--stats-mono)"
+          >
+            {new Date(p.date).toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
+          </text>
+        ))}
+      </svg>
+      <div className="stats-timeline-legend">
+        <span className="stats-timeline-legend-item">
+          <span className="stats-timeline-legend-dot" style={{ background: "var(--stats-accent)" }} />
+          Total
+        </span>
+        <span className="stats-timeline-legend-item">
+          <span className="stats-timeline-legend-dot" style={{ background: "var(--stats-warning)" }} />
+          Pendientes
+        </span>
+        <span className="stats-timeline-legend-item">
+          <span className="stats-timeline-legend-dot" style={{ borderRadius: "50%", border: "1.5px solid var(--stats-danger)", background: "transparent", width: 7, height: 7 }} />
+          Urg. alta (&ge;3.5)
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// COMPONENT: RoutingBreakdown
+// INSERT BEFORE: export default function StatsDashboard()
+// ============================================================
+
+const ROUTE_LABELS: Record<string, string> = {
+  empresa_seguridad: "Seguridad Privada",
+  administracion_barrio: "Administración",
+  vialidad: "Vialidad",
+  bomberos: "Bomberos",
+  municipalidad: "Municipalidad",
+  fiscalizacion_municipal: "Fiscalización",
+};
+
+function RoutingBreakdown({ routing }: { routing: RoutingResponse | null }) {
+  const routes = routing?.routes ?? [];
+  const maxTotal = Math.max(1, ...routes.map((r) => r.total));
+
+  if (routes.length === 0) return null;
+
+  return (
+    <div className="stats-routing">
+      {routes.map((r) => {
+        const pct = (r.total / maxTotal) * 100;
+        const urgCol =
+          r.avg_urgency >= 3.5 ? "var(--stats-danger)" : r.avg_urgency >= 2.5 ? "var(--stats-warning)" : "var(--stats-accent)";
+        const label = ROUTE_LABELS[r.id] ?? r.label ?? r.id;
+        return (
+          <div key={r.id} className="stats-routing-row">
+            <div className="stats-routing-label">{label}</div>
+            <div className="stats-routing-bar-bg">
+              <div
+                className="stats-routing-bar"
+                style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${urgCol}66, ${urgCol})` }}
+              />
+            </div>
+            <div className="stats-routing-count">{r.total}</div>
+            {r.last_24h > 0 && (
+              <div className="stats-routing-badge">+{r.last_24h} 24h</div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 export default function StatsDashboard() {
   const [rangeIdx, setRangeIdx] = useState(1); // default 30d
   const [activeCat, setActiveCat] = useState("all");
@@ -518,13 +743,19 @@ export default function StatsDashboard() {
               <HotspotsListAPI hotspots={filteredHotspots} />
             </div>
 
-            <div className="stats-card">
+           <div className="stats-card">
               <div className="stats-card-title">ACTIVIDAD POR FRANJA</div>
               <ActivityBySlot byHour={data.byHour} />
             </div>
+            <div className="stats-card">
+              <div className="stats-card-title">DERIVACIONES</div>
+              <RoutingBreakdown routing={data.routing} />
+            </div>
           </div>
         </div>
-
+        <div className="stats-bottom-row">
+          <TimelineChart timeline={data.timeline} />
+        </div>
         {/* Last updated */}
         {lastUpdated && (
           <div style={{ textAlign: "center", fontSize: 9, color: "var(--stats-dim)", fontFamily: "var(--stats-mono)" }}>
