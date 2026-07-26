@@ -13,11 +13,11 @@ Cada tarea debe copiar `.specify/templates/task.md` al comenzar y completar sus 
 | T006D | done | Baseline y migraciones PostgreSQL | Integrador | T003,T004 | fresh + adopción histórica sin drift |
 | T007 | done | CaseManager y máquina de estados | Domain | T003,T004,T006D | transición inválida rechazada |
 | T008 | done | Consentimiento y aprobación vinculados al caso | Domain | T004,T007 | scope, expiración y revocación |
-| T009 | ready | Ejecutor de tareas, intentos, retry y handoff | Execution | T006,T007,T008 | límites e idempotencia |
-| T010 | blocked | Persistencia de planes y supervisor estructurado | Execution | T007,T009 | recuperación tras reinicio |
-| T011 | blocked | API de conversación, caso y timeline | Integrador | T005,T007,T009 | HTTP + tenant isolation |
+| T009 | done | Ejecutor de tareas, intentos, retry y handoff | Execution | T006,T007,T008 | límites e idempotencia |
+| T010 | ready | Persistencia de planes y supervisor estructurado | Execution | T007,T009 | recuperación tras reinicio |
+| T011 | ready | API de conversación, caso y timeline | Integrador | T005,T007,T009 | HTTP + tenant isolation |
 | T012 | blocked | UI chat, resumen, aprobación y timeline | Conversation | T011 | pruebas de componentes |
-| T013 | blocked | Eventos de producto, redacción y métricas | Execution | T007,T009 | funnel sin datos sensibles |
+| T013 | ready | Eventos de producto, redacción y métricas | Execution | T007,T009 | funnel sin datos sensibles |
 | T014 | blocked | Calendario simulado idempotente | Integrador | T009,T011 | una sola proyección |
 | T015 | blocked | Matriz E2E sintética y evidencia | Integrador | T010-T014 | todos los escenarios críticos |
 
