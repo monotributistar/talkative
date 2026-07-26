@@ -1,0 +1,20 @@
+[
+  {
+    "name": "missing preferred time range",
+    "scenario": "missing_time",
+    "expected_kind": "ask_field",
+    "expected_detail": "preferred_time_range"
+  },
+  {
+    "name": "ready fields without active consent",
+    "scenario": "missing_consent",
+    "expected_kind": "request_consent",
+    "expected_detail": "coordinate_medical_appointment"
+  },
+  {
+    "name": "urgent or clinical request",
+    "scenario": "urgent_or_clinical",
+    "expected_kind": "handoff",
+    "expected_detail": "URGENT_OR_CLINICAL_REQUEST"
+  }
+]

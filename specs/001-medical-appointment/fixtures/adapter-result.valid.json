@@ -1,0 +1,24 @@
+[
+  {
+    "name": "successful booking includes evidence",
+    "value": {
+      "status": "succeeded",
+      "external_reference": "booking_001",
+      "evidence": [
+        {
+          "type": "appointment_confirmation",
+          "reference": "artifact_001",
+          "checksum": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    }
+  },
+  {
+    "name": "retryable counterparty failure",
+    "value": {
+      "status": "failed",
+      "failure_code": "COUNTERPARTY_UNAVAILABLE",
+      "retryable": true
+    }
+  }
+]

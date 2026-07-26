@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Agent {
+  id               String      @id
+  agentId          String      @unique
+  tenantId         String
+  name             String
+  workspace        String
+  status           String
+  heartbeatMinutes Int
+  lastHeartbeatAt  DateTime?
+  lastMessageAt    DateTime?
+  lastMessage      String?
+  createdAt        DateTime
+  updatedAt        DateTime
+
+  events AgentEvent[]
+
+  @@index([tenantId])
+}
+
+model AgentEvent {
+  id        String   @id
+  tenantId  String
+  agentId   String
+  agentRef  String
+  type      String
+  message   String
+  payload   Json?
+  timestamp DateTime
+
+  agent Agent? @relation(fields: [agentRef], references: [id], onDelete: Cascade)
+
+  @@index([agentRef, timestamp])
+  @@index([tenantId, agentId])
+}
+
+model Workflow {
+  id        String            @id
+  tenantId  String
+  name      String
+  createdAt DateTime
+  updatedAt DateTime
+
+  versions WorkflowVersion[]
+
+  @@index([tenantId])
+}
+
+model WorkflowVersion {
+  id         String   @id
+  workflowId String
+  version    Int
+  note       String?
+  nodes      Json
+  edges      Json
+  createdAt  DateTime
+
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@unique([workflowId, version])
+}
+
+model RouterRule {
+  id           String   @id
+  defaultModel String
+  routes       Json
+  updatedAt    DateTime
+}
+
+model RouterBudget {
+  id                    String   @id
+  globalDailyCostCapUsd Float
+  tenants               Json
+  agents                Json
+  updatedAt             DateTime
+}
+
+model RouterUsage {
+  id        String   @id
+  tenantId  String
+  agentId   String
+  model     String
+  tokens    Int
+  cost      Float
+  latencyMs Int
+  status    String
+  createdAt DateTime
+
+  @@index([tenantId, agentId, createdAt])
+}
+
+model FleetNode {
+  id        String   @id
+  tenantId  String
+  agentId   String
+  cloudId   String
+  name      String
+  mode      String
+  sshHost   String?
+  sshUser   String?
+  sshPort   Int?
+  basePath  String?
+  metadata  Json?
+  createdAt DateTime
+
+  @@index([tenantId, cloudId])
+}

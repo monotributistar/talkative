@@ -13,6 +13,7 @@
     "dev:frontend": "pnpm --filter workflow-agent-frontend dev",
     "build": "npm run build --workspace backend && npm run build --workspace frontend",
     "test:backend": "npm run test --workspace backend",
+    "test:contracts": "node --test specs/001-medical-appointment/contracts/contracts.test.cjs",
     "lint": "npm run lint --workspace backend && npm run lint --workspace frontend",
     "typecheck": "npm run typecheck --workspace backend && npm run typecheck --workspace frontend"
   },
@@ -20,6 +21,8 @@
     "@eslint/js": "^9.39.3",
     "@typescript-eslint/eslint-plugin": "^8.56.0",
     "@typescript-eslint/parser": "^8.56.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
     "eslint": "^9.39.3",
     "eslint-plugin-react-hooks": "^7.0.1"
   }

@@ -8,8 +8,8 @@ datasource db {
 }
 
 model Agent {
-  id               String      @id
-  agentId          String      @unique
+  id               String    @id
+  agentId          String    @unique
   tenantId         String
   name             String
   workspace        String
@@ -43,7 +43,7 @@ model AgentEvent {
 }
 
 model Workflow {
-  id        String            @id
+  id        String   @id
   tenantId  String
   name      String
   createdAt DateTime
@@ -114,3 +114,260 @@ model FleetNode {
   @@index([tenantId, cloudId])
 }
 
+model Principal {
+  id          String   @id
+  tenantId    String
+  displayName String
+  locale      String
+  timezone    String
+  createdAt   DateTime
+  updatedAt   DateTime
+
+  subjects      Subject[]
+  delegations   Delegation[]
+  conversations Conversation[]
+  cases         Case[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId])
+}
+
+model Subject {
+  id                     String    @id
+  tenantId               String
+  principalId            String
+  relationship           String
+  displayName            String
+  birthDate              DateTime?
+  relationshipVerifiedAt DateTime?
+  createdAt              DateTime
+  updatedAt              DateTime
+
+  principal   Principal    @relation(fields: [tenantId, principalId], references: [tenantId, id], onDelete: Restrict)
+  delegations Delegation[]
+  cases       Case[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, id, principalId])
+  @@index([tenantId, principalId])
+}
+
+model Delegation {
+  id          String    @id
+  tenantId    String
+  principalId String
+  subjectId   String
+  scope       Json
+  status      String
+  validFrom   DateTime
+  validUntil  DateTime?
+  createdAt   DateTime
+  updatedAt   DateTime
+
+  principal Principal @relation(fields: [tenantId, principalId], references: [tenantId, id], onDelete: Restrict)
+  subject   Subject   @relation(fields: [tenantId, subjectId, principalId], references: [tenantId, id, principalId], onDelete: Restrict)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, principalId, subjectId])
+  @@index([tenantId, status, validUntil])
+}
+
+model Conversation {
+  id          String    @id
+  tenantId    String
+  principalId String
+  caseId      String?
+  channel     String
+  status      String
+  startedAt   DateTime
+  lastTurnAt  DateTime?
+  createdAt   DateTime
+  updatedAt   DateTime
+
+  principal Principal          @relation(fields: [tenantId, principalId], references: [tenantId, id], onDelete: Restrict)
+  case      Case?              @relation(fields: [tenantId, caseId], references: [tenantId, id], onDelete: Restrict)
+  turns     ConversationTurn[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, principalId, status])
+  @@index([tenantId, caseId])
+}
+
+model ConversationTurn {
+  id                   String   @id
+  tenantId             String
+  conversationId       String
+  actor                String
+  modality             String
+  text                 String
+  transcriptConfidence Float?
+  correlationId        String
+  createdAt            DateTime
+
+  conversation Conversation @relation(fields: [tenantId, conversationId], references: [tenantId, id], onDelete: Cascade)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, conversationId, createdAt])
+  @@index([tenantId, correlationId])
+}
+
+model Case {
+  id             String    @id
+  tenantId       String
+  principalId    String
+  subjectId      String
+  type           String
+  goal           String
+  status         String
+  priority       Int
+  counterpartyId String?
+  dueAt          DateTime?
+  createdAt      DateTime
+  updatedAt      DateTime
+  completedAt    DateTime?
+
+  principal           Principal            @relation(fields: [tenantId, principalId], references: [tenantId, id], onDelete: Restrict)
+  subject             Subject              @relation(fields: [tenantId, subjectId, principalId], references: [tenantId, id, principalId], onDelete: Restrict)
+  conversations       Conversation[]
+  fields              CaseField[]
+  tasks               Task[]
+  consents            Consent[]
+  artifacts           Artifact[]
+  calendarProjections CalendarProjection[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, principalId, status])
+  @@index([tenantId, subjectId, status])
+}
+
+model CaseField {
+  id             String    @id
+  tenantId       String
+  caseId         String
+  key            String
+  valueEncrypted String
+  source         String
+  confidence     Float?
+  confirmedAt    DateTime?
+  createdAt      DateTime
+  updatedAt      DateTime
+
+  case Case @relation(fields: [tenantId, caseId], references: [tenantId, id], onDelete: Cascade)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, caseId, key])
+  @@index([tenantId, caseId])
+}
+
+model Task {
+  id              String   @id
+  tenantId        String
+  caseId          String
+  type            String
+  status          String
+  requiredInputs  Json
+  outputContract  Json
+  attemptLimit    Int
+  assignedAdapter String
+  createdAt       DateTime
+  updatedAt       DateTime
+
+  case     Case      @relation(fields: [tenantId, caseId], references: [tenantId, id], onDelete: Cascade)
+  attempts Attempt[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, caseId, status])
+}
+
+model Attempt {
+  id                String    @id
+  tenantId          String
+  taskId            String
+  sequence          Int
+  channel           String
+  status            String
+  idempotencyKey    String
+  correlationId     String
+  startedAt         DateTime
+  endedAt           DateTime?
+  failureCode       String?
+  retryable         Boolean?
+  externalReference String?
+  createdAt         DateTime
+  updatedAt         DateTime
+
+  task Task @relation(fields: [tenantId, taskId], references: [tenantId, id], onDelete: Cascade)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, idempotencyKey])
+  @@unique([tenantId, taskId, sequence])
+  @@index([tenantId, taskId, status])
+  @@index([tenantId, correlationId])
+}
+
+model Consent {
+  id             String    @id
+  tenantId       String
+  caseId         String
+  scope          String
+  dataCategories Json
+  counterpartyId String?
+  version        String
+  status         String
+  grantedAt      DateTime
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime
+  updatedAt      DateTime
+
+  case Case @relation(fields: [tenantId, caseId], references: [tenantId, id], onDelete: Cascade)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, caseId, scope, status])
+  @@index([tenantId, expiresAt])
+}
+
+model Artifact {
+  id                 String   @id
+  tenantId           String
+  caseId             String
+  type               String
+  storageKey         String
+  mimeType           String
+  checksum           String
+  source             String
+  verificationStatus String
+  createdAt          DateTime
+
+  case Case @relation(fields: [tenantId, caseId], references: [tenantId, id], onDelete: Cascade)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, storageKey])
+  @@index([tenantId, caseId, type])
+  @@index([tenantId, checksum])
+}
+
+model CalendarProjection {
+  id              String    @id
+  tenantId        String
+  caseId          String
+  provider        String
+  eventKey        String
+  externalEventId String?
+  idempotencyKey  String
+  startsAt        DateTime
+  endsAt          DateTime
+  syncStatus      String
+  failureCode     String?
+  lastSyncedAt    DateTime?
+  createdAt       DateTime
+  updatedAt       DateTime
+
+  case Case @relation(fields: [tenantId, caseId], references: [tenantId, id], onDelete: Cascade)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, provider, eventKey])
+  @@unique([tenantId, idempotencyKey])
+  @@unique([tenantId, caseId, provider])
+  @@index([tenantId, caseId, syncStatus])
+}

@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://talkative.local/schemas/task-command.schema.json",
+  "title": "TaskCommand",
+  "description": "Validated command passed to the task executor. Every external effect is scoped, correlated and idempotent.",
+  "type": "object",
+  "required": [
+    "command_id",
+    "tenant_id",
+    "case_id",
+    "task_id",
+    "type",
+    "input",
+    "consent_id",
+    "idempotency_key",
+    "correlation_id"
+  ],
+  "properties": {
+    "command_id": { "$ref": "#/definitions/nonEmptyId" },
+    "tenant_id": { "$ref": "#/definitions/nonEmptyId" },
+    "case_id": { "$ref": "#/definitions/nonEmptyId" },
+    "task_id": { "$ref": "#/definitions/nonEmptyId" },
+    "type": { "enum": ["search_appointment", "book_appointment"] },
+    "input": {
+      "type": "object",
+      "required": [
+        "subject_id",
+        "specialty",
+        "preferred_date_range",
+        "preferred_time_range",
+        "counterparty_id"
+      ],
+      "properties": {
+        "subject_id": { "$ref": "#/definitions/nonEmptyId" },
+        "specialty": { "const": "pediatrics" },
+        "preferred_date_range": {
+          "type": "object",
+          "required": ["from", "to"],
+          "properties": {
+            "from": { "type": "string", "format": "date" },
+            "to": { "type": "string", "format": "date" }
+          },
+          "additionalProperties": false
+        },
+        "preferred_time_range": {
+          "type": "object",
+          "required": ["from", "to"],
+          "properties": {
+            "from": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+            "to": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" }
+          },
+          "additionalProperties": false
+        },
+        "counterparty_id": { "$ref": "#/definitions/nonEmptyId" },
+        "slot_id": { "$ref": "#/definitions/nonEmptyId" }
+      },
+      "additionalProperties": false
+    },
+    "consent_id": { "$ref": "#/definitions/nonEmptyId" },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "correlation_id": { "$ref": "#/definitions/nonEmptyId" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "book_appointment" } } },
+      "then": {
+        "properties": {
+          "input": { "required": ["slot_id"] }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "nonEmptyId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    }
+  }
+}

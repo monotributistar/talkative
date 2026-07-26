@@ -1,0 +1,18 @@
+[
+  {
+    "name": "success without evidence",
+    "value": {
+      "status": "succeeded",
+      "external_reference": "booking_002",
+      "evidence": []
+    }
+  },
+  {
+    "name": "free text cannot replace a typed result",
+    "value": {
+      "status": "succeeded",
+      "external_reference": "booking_003",
+      "message": "El turno quedó confirmado."
+    }
+  }
+]

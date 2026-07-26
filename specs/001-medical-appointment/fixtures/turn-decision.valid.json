@@ -1,0 +1,28 @@
+[
+  {
+    "name": "asks for a missing availability range",
+    "value": {
+      "decision_id": "decision_001",
+      "case_id": "case_001",
+      "correlation_id": "corr_001",
+      "kind": "ask_field",
+      "field": "preferred_time_range",
+      "prompt": "¿En qué rango horario preferís el turno?"
+    }
+  },
+  {
+    "name": "requests scoped consent",
+    "value": {
+      "decision_id": "decision_002",
+      "case_id": "case_001",
+      "correlation_id": "corr_002",
+      "kind": "request_consent",
+      "consent": {
+        "purpose": "coordinate_medical_appointment",
+        "counterparty_id": "clinic_01",
+        "data_categories": ["subject_identity", "availability_preferences"],
+        "expires_at": "2026-08-10T15:00:00-03:00"
+      }
+    }
+  }
+]

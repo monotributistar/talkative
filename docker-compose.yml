@@ -29,7 +29,7 @@ services:
       AUTH_JWT_SECRET: "replace-with-a-strong-random-secret-at-least-32-chars"
       PERSISTENCE_DRIVER: db
       DATABASE_URL: postgresql://talkative:talkative@postgres:5432/talkative?schema=public
-    command: sh -c "npm run prisma:db:push && npm run start"
+    command: sh -c "npm run prisma:migrate:deploy && npm run start"
     ports:
       - "4000:4000"
     depends_on:

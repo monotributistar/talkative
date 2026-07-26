@@ -1,0 +1,40 @@
+[
+  {
+    "name": "analytics payload cannot include a full name",
+    "value": {
+      "event_id": "event_002",
+      "event_type": "turn.received",
+      "occurred_at": "2026-08-03T15:31:00Z",
+      "tenant_id": "tenant_demo",
+      "principal_id": "principal_001",
+      "subject_id": "subject_001",
+      "conversation_id": "conversation_001",
+      "case_id": "case_001",
+      "channel": "text",
+      "actor": "principal",
+      "correlation_id": "corr_010",
+      "privacy_version": "analytics-redacted-v1",
+      "payload": {
+        "full_name": "Persona Sintética"
+      }
+    }
+  },
+  {
+    "name": "analytics event requires privacy version",
+    "value": {
+      "event_id": "event_003",
+      "event_type": "case.created",
+      "occurred_at": "2026-08-03T15:32:00Z",
+      "tenant_id": "tenant_demo",
+      "principal_id": "principal_001",
+      "subject_id": "subject_001",
+      "conversation_id": "conversation_001",
+      "case_id": "case_001",
+      "actor": "system",
+      "correlation_id": "corr_011",
+      "payload": {
+        "case_type": "medical_appointment"
+      }
+    }
+  }
+]

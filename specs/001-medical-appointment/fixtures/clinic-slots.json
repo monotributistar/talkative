@@ -1,0 +1,50 @@
+[
+  {
+    "id": "slot_001",
+    "counterparty_id": "clinic_01",
+    "specialty": "pediatrics",
+    "provider_id": "provider_001",
+    "local_date": "2026-08-11",
+    "local_start_time": "15:00",
+    "starts_at": "2026-08-11T15:00:00-03:00",
+    "ends_at": "2026-08-11T15:30:00-03:00",
+    "location": "clinic_01:room_02",
+    "available": true
+  },
+  {
+    "id": "slot_002",
+    "counterparty_id": "clinic_01",
+    "specialty": "pediatrics",
+    "provider_id": "provider_002",
+    "local_date": "2026-08-13",
+    "local_start_time": "16:30",
+    "starts_at": "2026-08-13T16:30:00-03:00",
+    "ends_at": "2026-08-13T17:00:00-03:00",
+    "location": "clinic_01:room_04",
+    "available": true
+  },
+  {
+    "id": "slot_003",
+    "counterparty_id": "clinic_01",
+    "specialty": "pediatrics",
+    "provider_id": "provider_001",
+    "local_date": "2026-08-12",
+    "local_start_time": "09:00",
+    "starts_at": "2026-08-12T09:00:00-03:00",
+    "ends_at": "2026-08-12T09:30:00-03:00",
+    "location": "clinic_01:room_02",
+    "available": true
+  },
+  {
+    "id": "slot_004",
+    "counterparty_id": "clinic_01",
+    "specialty": "pediatrics",
+    "provider_id": "provider_003",
+    "local_date": "2026-08-14",
+    "local_start_time": "17:00",
+    "starts_at": "2026-08-14T17:00:00-03:00",
+    "ends_at": "2026-08-14T17:30:00-03:00",
+    "location": "clinic_01:room_05",
+    "available": false
+  }
+]

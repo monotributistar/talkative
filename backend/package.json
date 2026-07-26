@@ -13,7 +13,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:e2e": "node --import tsx --test src/e2e/**/*.test.ts",
     "prisma:generate": "prisma generate",
-    "prisma:db:push": "prisma db push",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:migrate:status": "prisma migrate status",
     "prisma:migrate:dev": "prisma migrate dev",
     "migrate:fs-to-db": "node --import tsx src/scripts/migrateFsToDb.ts",
     "seed:community": "node --import tsx src/scripts/seedCommunity.ts"

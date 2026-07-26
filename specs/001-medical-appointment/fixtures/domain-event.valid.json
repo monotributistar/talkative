@@ -1,0 +1,25 @@
+[
+  {
+    "name": "redacted attempt failure event",
+    "value": {
+      "event_id": "event_001",
+      "event_type": "attempt.failed",
+      "occurred_at": "2026-08-03T15:30:00Z",
+      "tenant_id": "tenant_demo",
+      "principal_id": "principal_001",
+      "subject_id": "subject_001",
+      "conversation_id": "conversation_001",
+      "case_id": "case_001",
+      "task_id": "task_search_001",
+      "attempt_id": "attempt_001",
+      "channel": "system",
+      "actor": "system",
+      "correlation_id": "corr_009",
+      "privacy_version": "analytics-redacted-v1",
+      "payload": {
+        "failure_code": "NO_AVAILABILITY",
+        "retryable": true
+      }
+    }
+  }
+]

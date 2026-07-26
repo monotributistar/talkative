@@ -1,0 +1,117 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://talkative.local/schemas/adapter-result.schema.json",
+  "title": "AdapterResult",
+  "description": "Structured result returned by an adapter. Free text can explain a result but cannot constitute proof of success.",
+  "oneOf": [
+    { "$ref": "#/definitions/succeeded" },
+    { "$ref": "#/definitions/waitingExternal" },
+    { "$ref": "#/definitions/failed" },
+    { "$ref": "#/definitions/needsUser" },
+    { "$ref": "#/definitions/needsHuman" }
+  ],
+  "definitions": {
+    "nonEmptyId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "evidenceRef": {
+      "type": "object",
+      "required": ["type", "reference", "checksum"],
+      "properties": {
+        "type": {
+          "enum": ["availability_options", "appointment_confirmation"]
+        },
+        "reference": { "$ref": "#/definitions/nonEmptyId" },
+        "checksum": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "succeeded": {
+      "type": "object",
+      "required": ["status", "external_reference", "evidence"],
+      "properties": {
+        "status": { "const": "succeeded" },
+        "external_reference": { "$ref": "#/definitions/nonEmptyId" },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/evidenceRef" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "waitingExternal": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": { "const": "waiting_external" },
+        "resume_after": { "type": "string", "format": "date-time" },
+        "external_reference": { "$ref": "#/definitions/nonEmptyId" }
+      },
+      "additionalProperties": false
+    },
+    "failed": {
+      "type": "object",
+      "required": ["status", "failure_code", "retryable"],
+      "properties": {
+        "status": { "const": "failed" },
+        "failure_code": {
+          "enum": [
+            "NO_AVAILABILITY",
+            "COUNTERPARTY_UNAVAILABLE",
+            "INVALID_REQUEST",
+            "CONSENT_INVALID",
+            "DUPLICATE_REQUEST",
+            "UNKNOWN"
+          ]
+        },
+        "retryable": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "needsUser": {
+      "type": "object",
+      "required": ["status", "missing_fields"],
+      "properties": {
+        "status": { "const": "needs_user" },
+        "missing_fields": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "subject",
+              "preferred_date_range",
+              "preferred_time_range",
+              "coverage",
+              "slot_id"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "needsHuman": {
+      "type": "object",
+      "required": ["status", "reason_code"],
+      "properties": {
+        "status": { "const": "needs_human" },
+        "reason_code": {
+          "enum": [
+            "ATTEMPTS_EXHAUSTED",
+            "POLICY_REQUIRES_HUMAN",
+            "COUNTERPARTY_REQUIRES_CALL",
+            "UNSUPPORTED_RESPONSE"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,211 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://talkative.local/schemas/turn-decision.schema.json",
+  "title": "TurnDecision",
+  "description": "Structured proposal emitted by the conversation engine. It cannot execute side effects or change case state.",
+  "type": "object",
+  "required": ["decision_id", "case_id", "correlation_id", "kind"],
+  "properties": {
+    "decision_id": { "$ref": "#/definitions/nonEmptyId" },
+    "case_id": { "$ref": "#/definitions/nonEmptyId" },
+    "correlation_id": { "$ref": "#/definitions/nonEmptyId" },
+    "kind": {
+      "enum": [
+        "ask_field",
+        "confirm_summary",
+        "request_consent",
+        "propose_task",
+        "inform",
+        "handoff"
+      ]
+    },
+    "field": {
+      "enum": [
+        "subject",
+        "specialty",
+        "preferred_date_range",
+        "preferred_time_range",
+        "coverage"
+      ]
+    },
+    "prompt": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "summary": { "$ref": "#/definitions/caseSummary" },
+    "consent": { "$ref": "#/definitions/consentDraft" },
+    "command_id": { "$ref": "#/definitions/nonEmptyId" },
+    "message": { "type": "string", "minLength": 1, "maxLength": 1000 },
+    "reason_code": {
+      "enum": [
+        "ATTEMPTS_EXHAUSTED",
+        "POLICY_REQUIRES_HUMAN",
+        "UNSUPPORTED_REQUEST",
+        "URGENT_OR_CLINICAL_REQUEST"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "ask_field" } } },
+      "then": {
+        "required": ["field", "prompt"],
+        "not": {
+          "anyOf": [
+            { "required": ["summary"] },
+            { "required": ["consent"] },
+            { "required": ["command_id"] },
+            { "required": ["message"] },
+            { "required": ["reason_code"] }
+          ]
+        }
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "confirm_summary" } } },
+      "then": {
+        "required": ["summary"],
+        "not": {
+          "anyOf": [
+            { "required": ["field"] },
+            { "required": ["prompt"] },
+            { "required": ["consent"] },
+            { "required": ["command_id"] },
+            { "required": ["message"] },
+            { "required": ["reason_code"] }
+          ]
+        }
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "request_consent" } } },
+      "then": {
+        "required": ["consent"],
+        "not": {
+          "anyOf": [
+            { "required": ["field"] },
+            { "required": ["prompt"] },
+            { "required": ["summary"] },
+            { "required": ["command_id"] },
+            { "required": ["message"] },
+            { "required": ["reason_code"] }
+          ]
+        }
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "propose_task" } } },
+      "then": {
+        "required": ["command_id"],
+        "not": {
+          "anyOf": [
+            { "required": ["field"] },
+            { "required": ["prompt"] },
+            { "required": ["summary"] },
+            { "required": ["consent"] },
+            { "required": ["message"] },
+            { "required": ["reason_code"] }
+          ]
+        }
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "inform" } } },
+      "then": {
+        "required": ["message"],
+        "not": {
+          "anyOf": [
+            { "required": ["field"] },
+            { "required": ["prompt"] },
+            { "required": ["summary"] },
+            { "required": ["consent"] },
+            { "required": ["command_id"] },
+            { "required": ["reason_code"] }
+          ]
+        }
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "handoff" } } },
+      "then": {
+        "required": ["reason_code"],
+        "not": {
+          "anyOf": [
+            { "required": ["field"] },
+            { "required": ["prompt"] },
+            { "required": ["summary"] },
+            { "required": ["consent"] },
+            { "required": ["command_id"] },
+            { "required": ["message"] }
+          ]
+        }
+      }
+    }
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "nonEmptyId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "caseSummary": {
+      "type": "object",
+      "required": [
+        "subject_id",
+        "specialty",
+        "preferred_date_range",
+        "preferred_time_range",
+        "data_to_share"
+      ],
+      "properties": {
+        "subject_id": { "$ref": "#/definitions/nonEmptyId" },
+        "specialty": { "const": "pediatrics" },
+        "preferred_date_range": {
+          "type": "object",
+          "required": ["from", "to"],
+          "properties": {
+            "from": { "type": "string", "format": "date" },
+            "to": { "type": "string", "format": "date" }
+          },
+          "additionalProperties": false
+        },
+        "preferred_time_range": {
+          "type": "object",
+          "required": ["from", "to"],
+          "properties": {
+            "from": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+            "to": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" }
+          },
+          "additionalProperties": false
+        },
+        "counterparty_id": { "$ref": "#/definitions/nonEmptyId" },
+        "data_to_share": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["subject_identity", "coverage", "availability_preferences"]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "consentDraft": {
+      "type": "object",
+      "required": ["purpose", "counterparty_id", "data_categories", "expires_at"],
+      "properties": {
+        "purpose": { "const": "coordinate_medical_appointment" },
+        "counterparty_id": { "$ref": "#/definitions/nonEmptyId" },
+        "data_categories": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["subject_identity", "coverage", "availability_preferences"]
+          }
+        },
+        "expires_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

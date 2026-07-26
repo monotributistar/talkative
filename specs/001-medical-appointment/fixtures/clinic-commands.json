@@ -1,0 +1,49 @@
+{
+  "search": {
+    "command_id": "command_search_001",
+    "tenant_id": "tenant_demo",
+    "case_id": "case_001",
+    "task_id": "task_search_001",
+    "type": "search_appointment",
+    "input": {
+      "subject_id": "subject_001",
+      "specialty": "pediatrics",
+      "preferred_date_range": {
+        "from": "2026-08-10",
+        "to": "2026-08-14"
+      },
+      "preferred_time_range": {
+        "from": "14:00",
+        "to": "18:00"
+      },
+      "counterparty_id": "clinic_01"
+    },
+    "consent_id": "consent_001",
+    "idempotency_key": "case_001:search:2026-08-10:v1",
+    "correlation_id": "corr_search_001"
+  },
+  "book": {
+    "command_id": "command_book_001",
+    "tenant_id": "tenant_demo",
+    "case_id": "case_001",
+    "task_id": "task_book_001",
+    "type": "book_appointment",
+    "input": {
+      "subject_id": "subject_001",
+      "specialty": "pediatrics",
+      "preferred_date_range": {
+        "from": "2026-08-10",
+        "to": "2026-08-14"
+      },
+      "preferred_time_range": {
+        "from": "14:00",
+        "to": "18:00"
+      },
+      "counterparty_id": "clinic_01",
+      "slot_id": "slot_001"
+    },
+    "consent_id": "consent_001",
+    "idempotency_key": "case_001:book:slot_001:v1",
+    "correlation_id": "corr_book_001"
+  }
+}

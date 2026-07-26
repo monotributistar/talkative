@@ -221,16 +221,35 @@ Set:
 - `PERSISTENCE_DRIVER=db`
 - `DATABASE_URL=postgresql://talkative:talkative@localhost:5432/talkative?schema=public`
 
-3. Generate Prisma client and push schema:
+3. Generate Prisma client and deploy the versioned migrations:
 ```bash
 npm run prisma:generate --workspace backend
-npm run prisma:db:push --workspace backend
+npm run prisma:migrate:deploy --workspace backend
+npm run prisma:migrate:status --workspace backend
 ```
 
 4. Run backend as usual:
 ```bash
 npm run dev:backend
 ```
+
+### Adopting an existing database created with `prisma db push`
+
+The repository contains a baseline for the original eight tables. Back up the
+database first. On an existing installation, mark only that baseline as already
+applied, then deploy the additive migrations:
+
+```bash
+DATABASE_URL=postgresql://talkative:talkative@localhost:5432/talkative?schema=public \
+npm exec --workspace backend -- prisma migrate resolve \
+  --applied 20260223173700_legacy_db_push_baseline
+
+DATABASE_URL=postgresql://talkative:talkative@localhost:5432/talkative?schema=public \
+npm run prisma:migrate:deploy --workspace backend
+```
+
+Do not run `prisma db push` in deployed environments. New databases execute the
+baseline normally; existing databases resolve it once and retain their rows.
 
 Optional one-shot migration from filesystem data to DB:
 ```bash

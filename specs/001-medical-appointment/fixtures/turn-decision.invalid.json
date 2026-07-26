@@ -1,0 +1,23 @@
+[
+  {
+    "name": "ask_field without prompt",
+    "value": {
+      "decision_id": "decision_003",
+      "case_id": "case_001",
+      "correlation_id": "corr_003",
+      "kind": "ask_field",
+      "field": "coverage"
+    }
+  },
+  {
+    "name": "single decision cannot also propose a command",
+    "value": {
+      "decision_id": "decision_004",
+      "case_id": "case_001",
+      "correlation_id": "corr_004",
+      "kind": "inform",
+      "message": "Encontré opciones.",
+      "command_id": "command_001"
+    }
+  }
+]

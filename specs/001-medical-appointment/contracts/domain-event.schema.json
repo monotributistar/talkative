@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://talkative.local/schemas/domain-event.schema.json",
+  "title": "DomainEvent",
+  "description": "Pseudonymized event envelope. Sensitive content belongs in the case record, not analytics.",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_type",
+    "occurred_at",
+    "tenant_id",
+    "principal_id",
+    "subject_id",
+    "conversation_id",
+    "case_id",
+    "correlation_id",
+    "actor",
+    "payload",
+    "privacy_version"
+  ],
+  "properties": {
+    "event_id": { "$ref": "#/definitions/nonEmptyId" },
+    "event_type": {
+      "enum": [
+        "conversation.started",
+        "turn.received",
+        "turn.responded",
+        "intent.proposed",
+        "field.requested",
+        "field.captured",
+        "field.confirmed",
+        "consent.requested",
+        "consent.granted",
+        "consent.revoked",
+        "case.created",
+        "task.started",
+        "attempt.started",
+        "attempt.succeeded",
+        "attempt.failed",
+        "retry.scheduled",
+        "handoff.requested",
+        "handoff.completed",
+        "artifact.received",
+        "artifact.verified",
+        "calendar.sync_succeeded",
+        "calendar.sync_failed",
+        "case.completed",
+        "case.cancelled"
+      ]
+    },
+    "occurred_at": { "type": "string", "format": "date-time" },
+    "tenant_id": { "$ref": "#/definitions/nonEmptyId" },
+    "principal_id": { "$ref": "#/definitions/nonEmptyId" },
+    "subject_id": { "$ref": "#/definitions/nonEmptyId" },
+    "conversation_id": { "$ref": "#/definitions/nonEmptyId" },
+    "case_id": { "$ref": "#/definitions/nonEmptyId" },
+    "task_id": { "$ref": "#/definitions/nonEmptyId" },
+    "attempt_id": { "$ref": "#/definitions/nonEmptyId" },
+    "channel": { "enum": ["text", "system"] },
+    "actor": { "enum": ["principal", "agent", "system", "counterparty", "human_operator"] },
+    "correlation_id": { "$ref": "#/definitions/nonEmptyId" },
+    "privacy_version": { "const": "analytics-redacted-v1" },
+    "payload": {
+      "type": "object",
+      "propertyNames": {
+        "not": {
+          "pattern": "([Nn][Aa][Mm][Ee]|[Ff][Uu][Ll][Ll]_[Nn][Aa][Mm][Ee]|[Bb][Ii][Rr][Tt][Hh]|[Dd][Oo][Bb]|[Dd][Oo][Cc][Uu][Mm][Ee][Nn][Tt]|[Dd][Nn][Ii]|[Pp][Aa][Ss][Ss][Pp][Oo][Rr][Tt]|[Cc][Ll][Ii][Nn][Ii][Cc][Aa][Ll]|[Mm][Ee][Dd][Ii][Cc][Aa][Ll]_[Tt][Ee][Xx][Tt]|[Tt][Rr][Aa][Nn][Ss][Cc][Rr][Ii][Pp][Tt]|[Ff][Ii][Ll][Ee]_[Cc][Oo][Nn][Tt][Ee][Nn][Tt]|[Rr][Aa][Ww]_[Tt][Ee][Xx][Tt])"
+        }
+      },
+      "additionalProperties": {
+        "type": ["string", "number", "boolean", "null", "array"],
+        "items": {
+          "type": ["string", "number", "boolean", "null"]
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "nonEmptyId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    }
+  }
+}

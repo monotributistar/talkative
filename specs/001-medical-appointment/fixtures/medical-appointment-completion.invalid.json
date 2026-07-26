@@ -1,0 +1,66 @@
+[
+  {
+    "name": "failed attempt cannot complete the case",
+    "value": {
+      "contract_id": "medical_appointment",
+      "contract_version": "1.0.0",
+      "tenant_id": "tenant_demo",
+      "case_id": "case_003",
+      "attempt": {
+        "attempt_id": "attempt_004",
+        "status": "failed",
+        "external_reference": "booking_006"
+      },
+      "appointment": {
+        "provider_name": "Clínica Sintética",
+        "specialty": "pediatrics",
+        "starts_at": "2026-08-14T17:00:00-03:00",
+        "location_or_join_url": "Sede sintética 1",
+        "confirmation_reference": "booking_006"
+      },
+      "artifact": {
+        "artifact_id": "artifact_004",
+        "type": "appointment_confirmation",
+        "checksum": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "verification_status": "verified"
+      },
+      "calendar": {
+        "projection_count": 1,
+        "sync_status": "synced",
+        "external_event_id": "calendar_002"
+      }
+    }
+  },
+  {
+    "name": "unverified artifact cannot complete the case",
+    "value": {
+      "contract_id": "medical_appointment",
+      "contract_version": "1.0.0",
+      "tenant_id": "tenant_demo",
+      "case_id": "case_004",
+      "attempt": {
+        "attempt_id": "attempt_005",
+        "status": "succeeded",
+        "external_reference": "booking_007"
+      },
+      "appointment": {
+        "provider_name": "Clínica Sintética",
+        "specialty": "pediatrics",
+        "starts_at": "2026-08-14T17:00:00-03:00",
+        "location_or_join_url": "Sede sintética 1",
+        "confirmation_reference": "booking_007"
+      },
+      "artifact": {
+        "artifact_id": "artifact_005",
+        "type": "appointment_confirmation",
+        "checksum": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "verification_status": "pending"
+      },
+      "calendar": {
+        "projection_count": 1,
+        "sync_status": "synced",
+        "external_event_id": "calendar_003"
+      }
+    }
+  }
+]

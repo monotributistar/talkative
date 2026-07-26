@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://talkative.local/schemas/medical-appointment-completion.schema.json",
+  "title": "MedicalAppointmentCompletion",
+  "description": "Evidence package required before CaseManager may complete a medical_appointment case.",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "contract_version",
+    "tenant_id",
+    "case_id",
+    "attempt",
+    "appointment",
+    "artifact",
+    "calendar"
+  ],
+  "properties": {
+    "contract_id": { "const": "medical_appointment" },
+    "contract_version": { "const": "1.0.0" },
+    "tenant_id": { "$ref": "#/definitions/nonEmptyId" },
+    "case_id": { "$ref": "#/definitions/nonEmptyId" },
+    "attempt": {
+      "type": "object",
+      "required": ["attempt_id", "status", "external_reference"],
+      "properties": {
+        "attempt_id": { "$ref": "#/definitions/nonEmptyId" },
+        "status": { "const": "succeeded" },
+        "external_reference": { "$ref": "#/definitions/nonEmptyId" }
+      },
+      "additionalProperties": false
+    },
+    "appointment": {
+      "type": "object",
+      "required": [
+        "provider_name",
+        "specialty",
+        "starts_at",
+        "location_or_join_url",
+        "confirmation_reference"
+      ],
+      "properties": {
+        "provider_name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "specialty": { "const": "pediatrics" },
+        "starts_at": { "type": "string", "format": "date-time" },
+        "location_or_join_url": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "confirmation_reference": { "$ref": "#/definitions/nonEmptyId" }
+      },
+      "additionalProperties": false
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["artifact_id", "type", "checksum", "verification_status"],
+      "properties": {
+        "artifact_id": { "$ref": "#/definitions/nonEmptyId" },
+        "type": { "const": "appointment_confirmation" },
+        "checksum": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "verification_status": { "const": "verified" }
+      },
+      "additionalProperties": false
+    },
+    "calendar": {
+      "type": "object",
+      "required": ["projection_count", "sync_status"],
+      "properties": {
+        "projection_count": { "type": "integer", "minimum": 1, "maximum": 1 },
+        "sync_status": { "enum": ["synced", "failed"] },
+        "external_event_id": { "$ref": "#/definitions/nonEmptyId" },
+        "failure_code": { "type": "string", "minLength": 3, "maxLength": 100 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "sync_status": { "const": "synced" } } },
+          "then": { "required": ["external_event_id"] }
+        },
+        {
+          "if": { "properties": { "sync_status": { "const": "failed" } } },
+          "then": { "required": ["failure_code"] }
+        }
+      ],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "nonEmptyId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    }
+  }
+}
